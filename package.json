@@ -1,0 +1,60 @@
+{
+  "name": "constellab",
+  "version": "0.1.0",
+  "private": true,
+  "description": "ConstellaLab — software-only crash-test lab for autonomous satellite swarms",
+  "main": "electron/main.js",
+  "scripts": {
+    "dev": "node scripts/dev.js",
+    "build": "vite build",
+    "test": "node scripts/test.js",
+    "status": "python -m constellab_core status",
+    "fetch-python": "node scripts/fetch-python-embed.js",
+    "dist:win": "npm run build && npm run fetch-python && electron-builder --win portable"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1",
+    "@vitejs/plugin-react": "^4.3.4",
+    "electron": "^33.2.0",
+    "electron-builder": "^25.1.8",
+    "typescript": "~5.6.2",
+    "vite": "^6.0.0"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "build": {
+    "appId": "ai.constellab.desktop",
+    "productName": "ConstellaLab",
+    "icon": "icon.png",
+    "files": [
+      "electron/**/*",
+      "core/**/*",
+      "frontend/dist/**/*",
+      "python/**/*"
+    ],
+    "asarUnpack": [
+      "python/**/*",
+      "core/**/*",
+      "frontend/**/*"
+    ],
+    "directories": {
+      "output": "dist-electron"
+    },
+    "win": {
+      "target": [
+        {
+          "target": "portable",
+          "arch": ["x64"]
+        }
+      ],
+      "artifactName": "ConstellaLab-Portable-${version}.exe",
+      "signAndEditExecutable": false
+    },
+    "portable": {
+      "artifactName": "ConstellaLab-${version}-portable.exe"
+    }
+  }
+}

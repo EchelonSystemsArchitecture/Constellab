@@ -1,10 +1,10 @@
-# Tessera Software Engineering Handbook
+# Constellab Software Engineering Handbook
 
-**Purpose:** Use Tessera as a real, continuously documented software-engineering project while learning and applying the topics in the attached Software Engineering syllabus.
+**Purpose:** Use Constellab as a real, continuously documented software-engineering project while learning and applying the topics in the attached Software Engineering syllabus.
 
 | Document field | Value |
 |---|---|
-| Project | Tessera — software-only satellite-swarm autonomy testing lab |
+| Project | Constellab — software-only satellite-swarm autonomy testing lab |
 | Document type | Engineering handbook, working project plan and syllabus application guide |
 | Version | 1.0 |
 | Status | Initial baseline; update through reviewed changes as the implementation teaches us more |
@@ -12,13 +12,13 @@
 | Intended use | Project execution, coursework practice, portfolio evidence and future research preparation |
 | Project constraint | 100% software and simulation; no physical spacecraft, hardware prototype or hardware-in-the-loop requirement |
 
-> **Working principle:** Do not merely study a concept and move on. Apply it to Tessera, create an artifact that shows the application, test that artifact, and record what you learned.
+> **Working principle:** Do not merely study a concept and move on. Apply it to Constellab, create an artifact that shows the application, test that artifact, and record what you learned.
 
 ---
 
 ## How to use this handbook
 
-This is not a claim that Tessera already implements the features below. It describes how the project should be engineered and how completion should be demonstrated. A feature is **planned** until code, tests and evidence show that it works.
+This is not a claim that Constellab already implements the features below. It describes how the project should be engineered and how completion should be demonstrated. A feature is **planned** until code, tests and evidence show that it works.
 
 For each feature, follow this loop:
 
@@ -32,7 +32,7 @@ For each feature, follow this loop:
 8. Record the result, known limitations and any decision that changed.
 9. Update the requirement-to-test traceability table.
 
-The attached syllabus is the source for the course-topic coverage. The Tessera-specific architecture, examples and workflow below are practical applications of those topics, not additional claims about what the syllabus requires.
+The attached syllabus is the source for the course-topic coverage. The Constellab-specific architecture, examples and workflow below are practical applications of those topics, not additional claims about what the syllabus requires.
 
 # Part I — Project definition and process
 
@@ -40,9 +40,9 @@ The attached syllabus is the source for the course-topic coverage. The Tessera-s
 
 ### 1.1 Product vision
 
-Tessera is a **simulation-based test lab for autonomous satellite-swarm software**. It deliberately creates difficult operating conditions, observes how a swarm policy behaves, checks configured rules, reproduces failures, reduces failures to smaller examples, investigates candidate causes and packages evidence that another person can verify.
+Constellab is a **simulation-based test lab for autonomous satellite-swarm software**. It deliberately creates difficult operating conditions, observes how a swarm policy behaves, checks configured rules, reproduces failures, reduces failures to smaller examples, investigates candidate causes and packages evidence that another person can verify.
 
-Tessera is not primarily a visualisation dashboard. The visual orbital simulation is the first deliverable because it makes the system tangible and creates the shared state that later testing features will use. The long-term differentiator is the test workflow and quality of its reproducible evidence.
+Constellab is not primarily a visualisation dashboard. The visual orbital simulation is the first deliverable because it makes the system tangible and creates the shared state that later testing features will use. The long-term differentiator is the test workflow and quality of its reproducible evidence.
 
 ### 1.2 Engineering objectives
 
@@ -83,7 +83,7 @@ These are project objectives, not promises that have already been achieved.
 
 At the start, these are **assumed stakeholder roles**, not confirmed customers:
 
-- **Developer (you):** implements and maintains Tessera.
+- **Developer (you):** implements and maintains Constellab.
 - **Swarm-policy developer:** wants to test a decision-making policy against controlled failures.
 - **Verification/test engineer:** wants traceable rules, reproducible defects and clear test reports.
 - **Researcher or reviewer:** wants to inspect scenarios, methods, metrics and limitations.
@@ -110,7 +110,7 @@ For visual features, add a manual visual check or screenshot. For stochastic exp
 
 ### 2.1 Recommended model: iterative-incremental with stage gates
 
-Tessera should use a **hybrid iterative-incremental process**:
+Constellab should use a **hybrid iterative-incremental process**:
 
 - **Incremental:** deliver a small working capability at a time, such as a visible orbit scene, then telemetry, then fault injection, then failure analysis.
 - **Iterative:** improve a capability after inspecting it and learning from its tests or use.
@@ -120,9 +120,9 @@ Tessera should use a **hybrid iterative-incremental process**:
 
 This approach fits a solo project whose scope and technical understanding will evolve. It still uses written requirements and design; Agile does not mean “no planning” or “no documentation.”
 
-### 2.2 Compare process models for Tessera
+### 2.2 Compare process models for Constellab
 
-| Model | Main idea | Strengths | Weaknesses / risks | Fit for Tessera |
+| Model | Main idea | Strengths | Weaknesses / risks | Fit for Constellab |
 |---|---|---|---|---|
 | Waterfall | Requirements, design, implementation, testing and maintenance proceed mainly in sequence | Clear phase documentation and milestones | Feedback arrives late; early assumptions may be wrong | Use its documentation discipline, but not as a rigid one-pass lifecycle |
 | V-model | Development phases map to corresponding test levels | Encourages test planning alongside design | Can feel rigid if requirements change often | Useful for requirements-to-test traceability and acceptance-test planning |
@@ -159,7 +159,7 @@ Do not perform ceremonial meetings for their own sake. Preserve the purpose: sha
 
 ### 2.5 Example sprint-planning exercise: first visual increment
 
-**Sprint goal:** an outsider can launch Tessera, view Earth and four moving satellites, control simulated time, select a satellite and read its telemetry.
+**Sprint goal:** an outsider can launch Constellab, view Earth and four moving satellites, control simulated time, select a satellite and read its telemetry.
 
 | Backlog item | Acceptance criteria | Priority | Estimate (illustrative) |
 |---|---|---|---:|
@@ -188,16 +188,16 @@ The point is to expose blockers early, not to produce a long status report.
 
 ### 3.1 Why requirements engineering matters
 
-Requirements turn “make Tessera cool” into observable behavior that can be designed, implemented and tested. It limits scope creep, lets us decide what to build first, and provides traceability from a stakeholder need to code and test evidence.
+Requirements turn “make Constellab cool” into observable behavior that can be designed, implemented and tested. It limits scope creep, lets us decide what to build first, and provides traceability from a stakeholder need to code and test evidence.
 
 A requirement should describe **what** the system must do or a constraint it must satisfy. Design describes **how** we will satisfy it. For example:
 
 - Requirement: “The user can pause simulated time without losing the current satellite selection.”
 - Design choice: “A `SimulationClock` owns pause state; a `SceneController` subscribes to snapshots.”
 
-### 3.2 Elicitation techniques and how Tessera uses them
+### 3.2 Elicitation techniques and how Constellab uses them
 
-| Technique | What it means | Tessera application |
+| Technique | What it means | Constellab application |
 |---|---|---|
 | Document analysis | Study existing source material, constraints and standards | Use the product briefing, syllabus and known simulator/policy interfaces as inputs; record where they disagree |
 | Interviews | Ask potential users structured questions | After the demo, ask swarm developers and test engineers how they currently reproduce and report defects |
@@ -226,21 +226,21 @@ The IDs below are a starting point. Change them through documented change contro
 
 | ID | Requirement | Priority | Acceptance evidence |
 |---|---|---|---|
-| FR-001 | Tessera shall render an Earth model and at least four virtual satellites in a 3D scene. | Must | Manual visual check plus a scene smoke test |
+| FR-001 | Constellab shall render an Earth model and at least four virtual satellites in a 3D scene. | Must | Manual visual check plus a scene smoke test |
 | FR-002 | Satellite positions shown in the scene shall be derived from the canonical simulation state. | Must | Integration test compares rendered position inputs with the state snapshot |
 | FR-003 | The user shall be able to pause, resume, reset and change simulated-time scale. | Must | UI test and unit tests for clock transitions |
 | FR-004 | The user shall be able to select a satellite and inspect its identifier and available telemetry. | Must | UI interaction test |
 | FR-005 | A scenario shall define reproducible starting conditions and record its configuration/version. | Must | Schema validation test and saved run metadata |
 | FR-006 | A run shall produce an ordered event trace. | Must, after visual base | Trace ordering and trace replay tests |
 | FR-007 | A policy shall receive a documented observation and return validated actions through a stable interface. | Must, after visual base | Contract tests with valid and invalid policy responses |
-| FR-008 | Tessera shall model communication opportunities and configurable interruptions only after the orbital foundation is accepted. | Must, later | Contact model tests and outage scenario |
+| FR-008 | Constellab shall model communication opportunities and configurable interruptions only after the orbital foundation is accepted. | Must, later | Contact model tests and outage scenario |
 | FR-009 | A fault injector shall support reproducible random and targeted faults with recorded parameters. | Must, later | Same seed/config produces same fault schedule within defined scope |
 | FR-010 | Rule monitors shall report invariant violations with timestamps and trace references. | Must, later | Positive and negative tests for every rule |
 | FR-011 | A failing scenario shall be reducible while preserving the selected failure predicate. | Should | Shrunk scenario still reproduces the target violation |
 | FR-012 | The investigation workflow shall compare baseline and controlled-intervention replays. | Should | Paired traces, explicit changed variable, controls and cautious conclusion |
 | FR-013 | A run shall support an evidence pack with configuration, versions, results and verification instructions. | Must for demo | Clean-checkout verification succeeds; edited records are detected |
 | FR-014 | Adaptive search shall record its candidate-generation strategy, budget, seeds and outcomes. | Research extension | Search results replay from recorded candidates |
-| FR-015 | Tessera shall compare selected policies against the same scenarios and budgets. | Should | Comparison output documents matched conditions and differences |
+| FR-015 | Constellab shall compare selected policies against the same scenarios and budgets. | Should | Comparison output documents matched conditions and differences |
 | FR-016 | The command-line workflow shall return a clear non-zero exit status for configured verification failures. | Should | CLI integration test |
 | FR-017 | The system shall preserve a confirmed failing scenario as a regression case. | Should | Regression reproduces before fix and passes or changes as expected after fix |
 | FR-018 | Failure reports shall distinguish confirmed observations from inferred causes. | Must for credible reports | Report schema and wording tests / reviewer checklist |
@@ -381,7 +381,7 @@ A client-server design introduces serialization, versioning, latency, authentica
 
 ### 4.6 Patterns to apply deliberately
 
-| Pattern | Tessera use | Caution |
+| Pattern | Constellab use | Caution |
 |---|---|---|
 | MVC | Split visual state/model, view and user input handling | Avoid duplicating the simulation state in the view |
 | Strategy | Swap greedy, auction, leases-only, Fabric and search strategies through a common interface | Keep the common contract narrow and test every implementation against it |
@@ -399,11 +399,11 @@ Maintain diagrams as source in `docs/architecture/diagrams/`. Mermaid diagrams r
 
 ### 5.1 System context diagram
 
-This is the highest-level view: who/what interacts with Tessera and what goes across the boundary.
+This is the highest-level view: who/what interacts with Constellab and what goes across the boundary.
 
 ```mermaid
 flowchart LR
-    Dev[Developer / Test Engineer] -->|scenario, policy, rules| T[Tessera]
+    Dev[Developer / Test Engineer] -->|scenario, policy, rules| T[Constellab]
     T -->|visual playback, failures, reports, evidence pack| Dev
     Policy[External or reference swarm policy] <-->|observations and proposed actions| T
     FS[(Local project files / evidence artifacts)] <-->|scenario, trace, report| T
@@ -418,7 +418,7 @@ For the initial visual milestone, the external policy, test-engine and CI intera
 ```mermaid
 flowchart TB
     User[Developer / Test Engineer]
-    subgraph Tessera
+    subgraph Constellab
       U1((View orbital scene))
       U2((Control simulated time))
       U3((Inspect satellite state))
@@ -457,7 +457,7 @@ flowchart TB
       Prop[Orbital propagator]
       Events[Event and trace store]
     end
-    subgraph Bench[Tessera Bench - later stages]
+    subgraph Bench[Constellab Bench - later stages]
       Adapter[Policy adapter]
       Network[Contact/network model]
       Nemesis[Fault injector / adversarial search]
@@ -630,7 +630,7 @@ The first visual UI should be functional and restrained. A rough wireframe is en
 
 ```text
 +--------------------------------------------------------------------------------+
-| TESSERA     [Play/Pause] [Reset] [Time scale: 1x v]   Sim time: 00:12:34        |
+| Constellab     [Play/Pause] [Reset] [Time scale: 1x v]   Sim time: 00:12:34        |
 +--------------------------------------------+-----------------------------------+
 |                                            | SELECTED SATELLITE                 |
 |                                            | ID: SAT-01                         |
@@ -716,7 +716,7 @@ A **test plan** explains what will be tested, why, how, where, by whom, with wha
 
 ### 6.3 Test levels
 
-| Level | Purpose | Tessera example |
+| Level | Purpose | Constellab example |
 |---|---|---|
 | Unit | Test a small function or class in isolation | Pause/resume logic; deterministic tie-breaker; hash serialization |
 | Component | Test a module and its immediate contract | Orbital propagator plus state builder |
@@ -849,7 +849,7 @@ Property tests need explicit assumptions and bounded input strategies. Do not as
 
 **Metamorphic testing:** where no simple expected output is available, define a transformation that should preserve or predictably change the result.
 
-Potential Tessera relations:
+Potential Constellab relations:
 
 - Renaming satellite IDs consistently should preserve physical results while correspondingly renaming IDs in output.
 - Reordering independent configuration fields should not change canonical behavior.
@@ -885,7 +885,7 @@ Required guardrails:
 
 Record in each run:
 
-- Tessera commit/version and dependency lockfile fingerprint.
+- Constellab commit/version and dependency lockfile fingerprint.
 - Scenario ID and schema version.
 - Policy name/version and code fingerprint where permitted.
 - Random seed(s) and RNG method.
@@ -914,7 +914,7 @@ Suggested lifecycle: `New → Triaged → In Progress → Fixed → Verified →
 
 ### 7.1 Maintenance types
 
-| Type | Meaning | Tessera example |
+| Type | Meaning | Constellab example |
 |---|---|---|
 | Corrective | Fix a discovered defect | Correct a bug where reset retains stale selected-satellite data |
 | Adaptive | Change software for a changed environment or dependency | Update the renderer integration for a new supported runtime version |
@@ -923,7 +923,7 @@ Suggested lifecycle: `New → Triaged → In Progress → Fixed → Verified →
 
 ### 7.2 Legacy systems and technical debt
 
-A legacy system is not simply an old system; it is often a system whose structure, dependencies or knowledge make change difficult, even if it still provides value. Tessera will eventually develop technical debt too.
+A legacy system is not simply an old system; it is often a system whose structure, dependencies or knowledge make change difficult, even if it still provides value. Constellab will eventually develop technical debt too.
 
 Warning signs include duplicated simulation logic, unclear units, tests that depend on test order, unpinned dependencies, hidden global state, policies that inspect private simulator internals, and evidence artifacts that cannot be replayed.
 
@@ -941,7 +941,7 @@ When an existing component becomes hard to modify:
 | Choice | Use when | Main risk to control |
 |---|---|---|
 | Reuse a library | It solves a well-defined problem and its license, quality and API suit the project | Hidden assumptions, API churn, security or license mismatch |
-| Wrap with an adapter | You want a stable Tessera interface around a third-party implementation | The adapter can become a thin wrapper that does not actually isolate differences |
+| Wrap with an adapter | You want a stable Constellab interface around a third-party implementation | The adapter can become a thin wrapper that does not actually isolate differences |
 | Reengineer an existing module | The current implementation is difficult to test or violates a core requirement | Rewrite may lose undocumented behavior; add characterization tests first |
 | Replace wholesale | The module is small, bounded and the cost of preserving it exceeds migration cost | High regression risk; compare behavior before deleting the old path |
 
@@ -1000,7 +1000,7 @@ The following 14-week schedule is the current planning target. It is not a guara
 
 ```mermaid
 gantt
-    title Tessera initial 14-week engineering plan
+    title Constellab initial 14-week engineering plan
     dateFormat YYYY-MM-DD
     axisFormat %b %d
     section Definition
@@ -1146,7 +1146,7 @@ A baseline is a known version accepted for a purpose. Any material change must h
 
 ### 11.1 Reliability principles
 
-Software reliability concerns the probability that software performs required behavior without failure for a stated time and environment. For Tessera, define the operational profile before quoting a reliability metric: scenario count, supported environment, policy, fault distribution, run duration and what counts as failure.
+Software reliability concerns the probability that software performs required behavior without failure for a stated time and environment. For Constellab, define the operational profile before quoting a reliability metric: scenario count, supported environment, policy, fault distribution, run duration and what counts as failure.
 
 Useful practices:
 
@@ -1157,7 +1157,7 @@ Useful practices:
 - Recover through controlled retries only when the operation is safe to retry and the retry is idempotent.
 - Measure failure frequency and uncertainty rather than making absolute claims from finite tests.
 
-### 11.2 Fault tolerance in Tessera
+### 11.2 Fault tolerance in Constellab
 
 Fault tolerance means the system can continue or fail in a controlled way when components fail. Apply it to the **software test lab**, not as a claim that real satellites are protected.
 
@@ -1172,7 +1172,7 @@ Examples:
 
 ### 11.3 Safety-critical concepts and boundaries
 
-Safety-critical software can contribute to hazards where failure may cause injury, loss of life, major environmental damage or severe mission loss. Actual spacecraft control software can be safety/mission critical; Tessera is a simulation and testing tool. Nevertheless, its reports could influence real engineering decisions, so it must avoid overstating what its evidence proves.
+Safety-critical software can contribute to hazards where failure may cause injury, loss of life, major environmental damage or severe mission loss. Actual spacecraft control software can be safety/mission critical; Constellab is a simulation and testing tool. Nevertheless, its reports could influence real engineering decisions, so it must avoid overstating what its evidence proves.
 
 Use these controls:
 
@@ -1185,9 +1185,9 @@ Use these controls:
 
 ### 11.4 CMMI maturity levels
 
-CMMI is a process-improvement model. Its commonly taught maturity-level framing is useful for assessing process discipline; it is not a certification claim for Tessera.
+CMMI is a process-improvement model. Its commonly taught maturity-level framing is useful for assessing process discipline; it is not a certification claim for Constellab.
 
-| Level | General meaning | What it would look like in Tessera |
+| Level | General meaning | What it would look like in Constellab |
 |---|---|---|
 | 1 — Initial | Work is unpredictable and depends heavily on individuals | Early prototype stage; many practices are informal |
 | 2 — Managed | Work and requirements are planned and tracked at project level | Versioned requirements, backlog, risk register, baselines, test evidence and milestones are maintained |
@@ -1195,7 +1195,7 @@ CMMI is a process-improvement model. Its commonly taught maturity-level framing 
 | 4 — Quantitatively Managed | Process and product performance are measured and controlled quantitatively | Repeated data on build reliability, test runtime, defect discovery and estimation accuracy inform control decisions |
 | 5 — Optimizing | Continuous improvement is driven by quantitative feedback and root-cause prevention | Retrospectives and defect analyses lead to measured process changes and verified reduction in recurring failures |
 
-Do not claim Tessera “is CMMI Level 3/5.” A maturity level is assessed within an organizational context, not granted because a small project has a few templates.
+Do not claim Constellab “is CMMI Level 3/5.” A maturity level is assessed within an organizational context, not granted because a small project has a few templates.
 
 ### 11.5 Software Process Improvement (SPI)
 
@@ -1222,7 +1222,7 @@ Metrics need interpretation; optimizing one metric can harm another. For example
 
 ### 12.1 Threat model
 
-Tessera processes scenario files, policy outputs, traces and evidence. Even a local tool has security concerns.
+Constellab processes scenario files, policy outputs, traces and evidence. Even a local tool has security concerns.
 
 | Threat | Example | Control |
 |---|---|---|
@@ -1358,7 +1358,7 @@ The order below preserves the project decision: **visual simulation first; simul
 Suggested structure; adapt it to the actual implementation language and framework rather than creating empty folders solely to match the diagram.
 
 ```text
-tessera/
+Constellab/
   README.md
   CHANGELOG.md
   CONTRIBUTING.md
@@ -1432,9 +1432,9 @@ At the end of the week:
 
 # Part IX — Syllabus coverage map
 
-The attached syllabus is organized into six modules. This table shows where its topics are taught through Tessera artifacts and exercises. Section references point to this handbook.
+The attached syllabus is organized into six modules. This table shows where its topics are taught through Constellab artifacts and exercises. Section references point to this handbook.
 
-| Syllabus module/topic | Tessera application in this handbook | Artifact or exercise |
+| Syllabus module/topic | Constellab application in this handbook | Artifact or exercise |
 |---|---|---|
 | **Module 1: Software engineering terminology and methodologies** | Sections 2, 8 and 14 | Process-model comparison and stage-gated lifecycle |
 | Need for requirements engineering | Section 3 | Charter, requirement baseline and traceability |
@@ -1483,11 +1483,11 @@ The attached syllabus is organized into six modules. This table shows where its 
 | **Module 6: Contemporary issues** | Section 13 | AI-assisted development and measured AI/ML test generation |
 | AI and automation in software development (understand/analyze) | Sections 6.10 and 13 | Guardrails, evaluation protocol and comparison with non-AI baselines |
 
-## 17. Suggested coursework exercises using Tessera
+## 17. Suggested coursework exercises using Constellab
 
 Complete these as you reach the related project stage. The point is to learn by producing real project artifacts.
 
-1. **Process model case study:** explain why a rigid Waterfall process is not the best sole model for Tessera, and why stage gates still matter.
+1. **Process model case study:** explain why a rigid Waterfall process is not the best sole model for Constellab, and why stage gates still matter.
 2. **Requirement analysis:** write five FRs and five NFRs for the visual simulator; get each reviewed against the requirement quality checklist.
 3. **UML assignment:** redraw the context, sequence and class diagrams after the first state model is implemented; identify one design change revealed by the diagrams.
 4. **Black-box test design:** create boundary-value and state-transition tests for the time controls.
@@ -1504,7 +1504,7 @@ Complete these as you reach the related project stage. The point is to learn by 
 
 ## 18. Glossary
 
-| Term | Meaning in Tessera |
+| Term | Meaning in Constellab |
 |---|---|
 | Acceptance criteria | Observable conditions used to decide whether a requirement is satisfied |
 | ADR | Architecture Decision Record explaining a design choice and its trade-offs |

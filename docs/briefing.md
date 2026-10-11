@@ -1,8 +1,8 @@
-# Tessera: Final Product, Engineering & Research Briefing
+# Constellab: Final Product, Engineering & Research Briefing
 
-**One sentence:** Tessera is a software-only crash-test lab for autonomous satellite swarms: it deliberately searches for failures in simulation, minimizes and investigates them, and produces evidence that another person can independently replay and verify.
+**One sentence:** Constellab is a software-only crash-test lab for autonomous satellite swarms: it deliberately searches for failures in simulation, minimizes and investigates them, and produces evidence that another person can independently replay and verify.
 
-**Product boundary:** Tessera is a testing and verification platform, not a satellite, not a flight-control product, and not a certification authority. All spacecraft, sensors, orbital conditions, communication links, resources and failures are simulated. No hardware or hardware-in-the-loop testing is required.
+**Product boundary:** Constellab is a testing and verification platform, not a satellite, not a flight-control product, and not a certification authority. All spacecraft, sensors, orbital conditions, communication links, resources and failures are simulated. No hardware or hardware-in-the-loop testing is required.
 
 **Current status:** design and research stage. Nothing is a shipped feature unless explicitly marked **WORKING**. Code snippets are starter sketches, not production components. Claims tagged **(H)** are hypotheses to test with users. Research claims, competitor details, and patent leads must be re-verified against primary sources before publication.
 
@@ -31,7 +31,7 @@ If you only have two minutes: read the box in Part 1.1 and the visual-first chec
 > **Picture 12 small satellites circling Earth, all working together to spot wildfires.**
 > They are supposed to talk to each other, but they fly so fast that their radio links keep cutting out, like a group chat in a tunnel.
 > When the chat drops, two satellites can each spot the same fire, each decide "I'll handle it," and both burn fuel to chase it. Nobody noticed because they could not talk.
-> **Tessera is the test lab that makes this happen on purpose, in a computer simulation, before the satellites ever launch.** It cuts the "group chat" at selected moments, watches the satellites' modeled decisions, flags monitored-rule violations, searches for a minimal failing case, and creates an evidence pack that another person can replay and verify.
+> **Constellab is the test lab that makes this happen on purpose, in a computer simulation, before the satellites ever launch.** It cuts the "group chat" at selected moments, watches the satellites' modeled decisions, flags monitored-rule violations, searches for a minimal failing case, and creates an evidence pack that another person can replay and verify.
 
 ## 1.2 An everyday analogy
 
@@ -51,7 +51,7 @@ Think of a **group of friends doing a scavenger hunt, each with their own phone*
 | "Rewind the tape, change one thing, press play" | **Intervention replay**: test a candidate explanation by changing one modeled factor |
 | A notebook where each page contains a fingerprint of the page before | A **hash-chained ledger**: changes can be detected when the chain is checked against a trusted final hash or signature |
 
-The tile in the name helps too: a *tessera* is one small tile of a mosaic. Each satellite holds a **partial picture** of the mission. Tessera checks that the tiles still fit together after the satellites reconnect.
+The tile in the name helps too: a *Constellab* is one small tile of a mosaic. Each satellite holds a **partial picture** of the mission. Constellab checks that the tiles still fit together after the satellites reconnect.
 
 ## 1.3 Why this matters now
 
@@ -59,7 +59,7 @@ The tile in the name helps too: a *tessera* is one small tile of a mosaic. Each 
 - A September 2026 paper evaluates a CRDT-based shared-state service in a simulated/emulated 66-satellite constellation.
 - These projects show that autonomy, simulation and distributed-state research already exist. A possible gap to investigate is an independent, repeatable test workflow that actively searches for autonomy failures, minimizes them and packages the evidence. **(H)** whether teams need and will pay for this workflow.
 
-## 1.4 What Tessera is NOT
+## 1.4 What Constellab is NOT
 
 - **Not a satellite.** No hardware at all.
 - **Not merely a dashboard or a 3D globe.** A functional visual orbital simulator is the first deliverable and the product's front door. The long-term product is the testing workflow behind it: controlled faults, rule checking, failure investigation and replayable evidence. The visual layer must display real simulation state, not a disconnected animation or decorative mock-up.
@@ -122,7 +122,7 @@ You are building or buying software that lets satellites make decisions by thems
 
 ## 2.7 Client FAQ
 
-**Is this just another simulator?** No. A simulator shows what happens. Tessera is built to *attack* your swarm's decisions and report failures, in the way a security tester attacks software.
+**Is this just another simulator?** No. A simulator shows what happens. Constellab is built to *attack* your swarm's decisions and report failures, in the way a security tester attacks software.
 
 **Will this work with our own autonomy?** The plan is a single narrow interface: you give us "what the satellite sees" and we take back "what it decides." **(H)** that this fits real systems.
 
@@ -139,7 +139,7 @@ You are building or buying software that lets satellites make decisions by thems
 The architecture has two connected layers, but they are **not built in the same order**:
 
 1. **Visual Orbital Simulator (build first):** a functional 3D scene renders Earth, virtual satellites, orbit paths, labels, a camera, simulated time controls and a selected-satellite inspector. It is driven by actual orbital/simulation state. At this stage, satellites do not communicate with one another and there is no swarm coordination logic.
-2. **Tessera Bench (build after the visual base):** the same simulation state grows an event log, policy interface, simulated communication model, fault injection, rule monitoring, failure search, replay, reporting and evidence verification.
+2. **Constellab Bench (build after the visual base):** the same simulation state grows an event log, policy interface, simulated communication model, fault injection, rule monitoring, failure search, replay, reporting and evidence verification.
 
 ```text
                       USER
@@ -161,7 +161,7 @@ The architecture has two connected layers, but they are **not built in the same 
                          │ extended later with events
                          ▼
        ┌───────────────────────────────────┐
-       │ TESSERA BENCH                     │  BUILD SECOND
+       │ Constellab BENCH                     │  BUILD SECOND
        │ scenario + policy adapter         │
        │ modeled links + fault injection   │
        │ state/temporal rule monitors      │
@@ -185,12 +185,12 @@ The two product components remain:
 - **Bench** (primary product): scenario-driven testing, fault injection, invariant monitoring, failure search, shrinking, counterfactual investigation, comparisons, reporting and evidence verification.
 - **Fabric** (optional reference policy): a small open-source example of a swarm policy that handles task claims and partitions. It demonstrates that Bench can find and measure meaningful behavior. A decision gate determines whether Fabric deserves continued development.
 
-The research extension is **adaptive adversarial testing**: Tessera learns or searches for fault sequences that reveal failures more efficiently than random or fixed scenarios. AI/ML is used to improve test generation and failure triage—not to bypass deterministic safety checks or to claim that a policy is safe merely because a model says so.
+The research extension is **adaptive adversarial testing**: Constellab learns or searches for fault sequences that reveal failures more efficiently than random or fixed scenarios. AI/ML is used to improve test generation and failure triage—not to bypass deterministic safety checks or to claim that a policy is safe merely because a model says so.
 
 ## 3.2 Suggested folder layout
 
 ```text
-tessera/
+Constellab/
   frontend/      scene/ camera/ controls/ inspector/ state_client/
   core/          sim.py  clock.py  rng.py  orbital_state.py  events.py
   schemas/       simulation_state.schema.json  policy.schema.json
@@ -687,13 +687,13 @@ Run multiple seeds, separate tuning scenarios from held-out evaluation scenarios
 ## 3.20 The commands we are building toward (planned interface)
 
 ```bash
-tessera run scenarios/wildfire_partition.yaml --policy policies.greedy:GreedyLocal --seeds 100 --out evidence/
-tessera search scenarios/wildfire_partition.yaml --strategy mutation --budget 1000 --policy policies.greedy:GreedyLocal
-tessera shrink evidence/runs.jsonl --run 417
-tessera why evidence/runs.jsonl --run 417 --intervention remove_link_cut
-tessera compare --left policies.greedy:GreedyLocal --right policies.fabric:Fabric --scenario scenarios/wildfire_partition.yaml
-tessera triage evidence/
-tessera verify evidence/
+Constellab run scenarios/wildfire_partition.yaml --policy policies.greedy:GreedyLocal --seeds 100 --out evidence/
+Constellab search scenarios/wildfire_partition.yaml --strategy mutation --budget 1000 --policy policies.greedy:GreedyLocal
+Constellab shrink evidence/runs.jsonl --run 417
+Constellab why evidence/runs.jsonl --run 417 --intervention remove_link_cut
+Constellab compare --left policies.greedy:GreedyLocal --right policies.fabric:Fabric --scenario scenarios/wildfire_partition.yaml
+Constellab triage evidence/
+Constellab verify evidence/
 ```
 
 These commands describe the intended interface, not commands that already exist. The exact CLI can change as the implementation develops.
@@ -734,7 +734,7 @@ Do not begin with stakeholder outreach or communication-network behavior. First 
 - [ ] Prove that a given initial state and simulation time produce the same position snapshot.
 - [ ] Save a screenshot and short screen recording of the working scene.
 
-**Week-one goal:** a person can open Tessera and see four satellites moving around Earth, control simulated time, select a satellite and inspect its state. No inter-satellite messaging, communication links, coordination policy, ML or customer outreach is part of week one.
+**Week-one goal:** a person can open Constellab and see four satellites moving around Earth, control simulated time, select a satellite and inspect its state. No inter-satellite messaging, communication links, coordination policy, ML or customer outreach is part of week one.
 
 ## 4.2 The 14-week plan with checkpoints
 
@@ -787,7 +787,7 @@ Minimum experiment set:
 5. **Counterfactuals:** test the hypothesized cause, an unrelated intervention and a no-change control.
 6. **Differential/metamorphic:** test selected policies and transformations whose expected relationships are explicitly justified.
 7. **Fidelity escalation:** replay selected L0 failures at L1 and report which findings persist, disappear or remain inconclusive.
-8. **Regression:** introduce a known bug, make Tessera detect it, fix it, then verify that the saved counterexample prevents its return.
+8. **Regression:** introduce a known bug, make Constellab detect it, fix it, then verify that the saved counterexample prevents its return.
 
 Report failures and successes. Do not tune on the test set and then present the same set as independent validation.
 
@@ -840,13 +840,13 @@ Use the working demo to make the conversation concrete. Ask:
 ## 5.2 Who else is in the space (from research)
 
 - **NASA Starling:** NASA's four-CubeSat mission has demonstrated distributed autonomy, cross-spacecraft status sharing and autonomous planning; it remains an important baseline for swarm-autonomy research. [NASA Starling](https://www.nasa.gov/smallspacecraft/what-is-starling/)
-- **ESA Φsat-2:** demonstrates onboard AI applications including cloud filtering, image compression, vessel detection and environmental-event analysis. This makes clear that onboard image AI by itself is not Tessera's differentiator. [ESA Φsat-2](https://www.esa.int/Applications/Observing_the_Earth/FutureEO/Phsat-2/Introducing_Phsat-2)
-- **Sedaro, Shield AI and NOVI Space:** their August 24, 2026 announcement describes an on-orbit Hivemind demonstration on one NOVI satellite, with five additional virtual satellites in a six-member constellation model and Sedaro's autonomy framework. This is adjacent autonomy and virtual-constellation work, not proof that Tessera's testing product is unnecessary. [Joint announcement](https://sedaro.com/news/shield-ai-novi-trusted-autonomy-demo)
-- **Slingshot Aerospace:** announced a $69.2 million, 4.5-year U.S. Space Force contract in July 2026 for AI-powered mission rehearsal and operational training. That validates activity in space simulation and rehearsal, but does not by itself establish overlap with Tessera's proposed independent testing workflow. [Slingshot announcement](https://www.slingshot.space/news/slingshot-aerospace-wins-69-2-million-u-s-space-force-contract-to-advance-ai-powered-mission-readiness-for-space-defense)
+- **ESA Φsat-2:** demonstrates onboard AI applications including cloud filtering, image compression, vessel detection and environmental-event analysis. This makes clear that onboard image AI by itself is not Constellab's differentiator. [ESA Φsat-2](https://www.esa.int/Applications/Observing_the_Earth/FutureEO/Phsat-2/Introducing_Phsat-2)
+- **Sedaro, Shield AI and NOVI Space:** their August 24, 2026 announcement describes an on-orbit Hivemind demonstration on one NOVI satellite, with five additional virtual satellites in a six-member constellation model and Sedaro's autonomy framework. This is adjacent autonomy and virtual-constellation work, not proof that Constellab's testing product is unnecessary. [Joint announcement](https://sedaro.com/news/shield-ai-novi-trusted-autonomy-demo)
+- **Slingshot Aerospace:** announced a $69.2 million, 4.5-year U.S. Space Force contract in July 2026 for AI-powered mission rehearsal and operational training. That validates activity in space simulation and rehearsal, but does not by itself establish overlap with Constellab's proposed independent testing workflow. [Slingshot announcement](https://www.slingshot.space/news/slingshot-aerospace-wins-69-2-million-u-s-space-force-contract-to-advance-ai-powered-mission-readiness-for-space-defense)
 - **Shared-state research (arXiv 2609.18839):** describes a CRDT-based distributed-state service evaluated with a simulated/emulated 66-satellite constellation. It is relevant prior research for Fabric and for testing shared-state behavior. [Paper](https://arxiv.org/abs/2609.18839)
 - **Adjacent projects to investigate further:** Glass Box, OrbitReasoning Core and STARS are leads from the initial research notes; assess their actual scope and publication status before treating them as direct competitors.
 
-**Prior-art warning:** the research notes identify published work and a possible patent lead around conflict-free shared-state approaches. This briefing has not re-verified the specific patent claims, so treat that as a warning to investigate—not as a legal conclusion. Tessera should not claim to have invented CRDTs or shared-state merging. Its bet is the test methodology, failure minimization, controlled replay and evidence workflow, subject to further prior-art review.
+**Prior-art warning:** the research notes identify published work and a possible patent lead around conflict-free shared-state approaches. This briefing has not re-verified the specific patent claims, so treat that as a warning to investigate—not as a legal conclusion. Constellab should not claim to have invented CRDTs or shared-state merging. Its bet is the test methodology, failure minimization, controlled replay and evidence workflow, subject to further prior-art review.
 
 ## 5.3 About patents and research novelty (plain version)
 
@@ -927,4 +927,4 @@ The project should first establish technical usefulness and compare against prio
 9. **Novelty is a research result, not a slogan.** Validate the gap against papers, products and patents before making novelty or patentability claims.
 10. **Keep user data private by design.** Start with local execution. Add hosted execution only after security, isolation, retention and customer requirements are understood.
 
-**Final positioning:** Tessera is an independent, simulation-first test bench for autonomous satellite-swarm software. It searches for failures, minimizes them, tests explanations, compares policies and produces replayable evidence. Its central research bet is that adaptive adversarial testing can find more actionable defects per unit of testing effort than random or fixed scenarios. That claim must be tested—and reported honestly—before it becomes a headline.
+**Final positioning:** Constellab is an independent, simulation-first test bench for autonomous satellite-swarm software. It searches for failures, minimizes them, tests explanations, compares policies and produces replayable evidence. Its central research bet is that adaptive adversarial testing can find more actionable defects per unit of testing effort than random or fixed scenarios. That claim must be tested—and reported honestly—before it becomes a headline.

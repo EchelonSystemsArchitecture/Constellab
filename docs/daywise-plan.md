@@ -1,6 +1,6 @@
-# Tessera — Day-wise AI-Agent Execution Plan
+# Constellab — Day-wise AI-Agent Execution Plan
 
-**Purpose:** Build Tessera as a software-only orbital/swarm simulation and autonomous-swarm testing platform. The visual orbital simulator must be usable first. After that foundation, implement configurable simulation systems, simulated swarm behavior, heavily trained neural policies, adversarial test generation, failure analysis, and reproducible evidence.
+**Purpose:** Build Constellab as a software-only orbital/swarm simulation and autonomous-swarm testing platform. The visual orbital simulator must be usable first. After that foundation, implement configurable simulation systems, simulated swarm behavior, heavily trained neural policies, adversarial test generation, failure analysis, and reproducible evidence.
 
 **Schedule:** 70 consecutive implementation days, starting 11/10/2026. This is an aggressive sequence, not a promise that every quality gate will pass on its scheduled day. A failed gate must be fixed before dependent work is called complete.
 
@@ -26,12 +26,12 @@
 | G2 — First reproducible swarm failure | 34 | Simulated tasking and communication faults expose a known baseline-policy failure; trace is replayable. |
 | G3 — Trained swarm policy | 56 | Multiple neural policy families have been trained/evaluated against non-neural baselines across held-out configurations; safety shield remains independent. |
 | G4 — Learned adversarial testing | 62 | Learned scenario search is compared fairly with random/fixed search and produces reproducible counterexamples. |
-| G5 — Integrated Tessera build | 70 | Visual simulator, configurable parameters, trained policies, test engine, failure analysis, evidence packs and clean-start verification operate together. |
+| G5 — Integrated Constellab build | 70 | Visual simulator, configurable parameters, trained policies, test engine, failure analysis, evidence packs and clean-start verification operate together. |
 
 ---
 
 ## Day 1: 11/10/2026
-**Task: Establish a runnable code baseline and inspect the actual repository.** Inspect the current Tessera files and repository state, identify whether source code exists, then create or repair the minimum project structure without assuming that designs or snippets are implemented. Set up the frontend and Python-core directories, ignore generated data/checkpoints/build products, and add a single local command path for starting the application in development mode.
+**Task: Establish a runnable code baseline and inspect the actual repository.** Inspect the current Constellab files and repository state, identify whether source code exists, then create or repair the minimum project structure without assuming that designs or snippets are implemented. Set up the frontend and Python-core directories, ignore generated data/checkpoints/build products, and add a single local command path for starting the application in development mode.
 
 **Detailed execution:** Add a minimal frontend shell and a minimal Python simulation service that starts, returns a version/status payload and exits predictably on invalid configuration. Add a smoke test that imports the Python package and a frontend build check. Keep the simulator state minimal today; do not add networking between simulated satellites. The frontend may display an empty scene shell so the next days can render into the actual application rather than creating a throwaway prototype.
 
@@ -166,7 +166,7 @@
 ## Day 20: 30/10/2026
 **Task: Build a plugin/component registry instead of parameter-specific branching.** Create a common lifecycle for component discovery, schema registration, config validation, initialization, state update, snapshot serialization and teardown. Add explicit registration for orbit, resource, sensor, task and event-source components.
 
-**Detailed execution:** The core should loop through registered components according to lifecycle/priority metadata. Do not add `if parameter_name == ...` or `if satellite_type == ...` blocks to the global engine. Keep plugins trusted executable code shipped with Tessera; client configuration itself remains data-only. Add tests for a third-party-style example plugin registered without changing the simulation core, duplicate plugin IDs and incompatible plugin versions.
+**Detailed execution:** The core should loop through registered components according to lifecycle/priority metadata. Do not add `if parameter_name == ...` or `if satellite_type == ...` blocks to the global engine. Keep plugins trusted executable code shipped with Constellab; client configuration itself remains data-only. Add tests for a third-party-style example plugin registered without changing the simulation core, duplicate plugin IDs and incompatible plugin versions.
 
 **Completion evidence:** adding an example component requires a plugin and schema registration, not a core-loop edit; invalid/duplicate registrations fail during startup with actionable diagnostics.
 
@@ -245,7 +245,7 @@
 
 **Detailed execution:** The fault generator must state its scope, timing window, target selection rule, duration and random seed. Add a duplicate-tasking invariant and a lost/expired-task invariant. Construct a baseline scenario where disconnected local-greedy agents can independently claim the same task. Verify the failure is caused by the configured outage and that removing the outage changes the outcome in the controlled example.
 
-**Completion evidence:** Tessera can reproduce one known policy violation and identify the satellite/task/event IDs involved; controls also prove the baseline passes in the no-fault control case.
+**Completion evidence:** Constellab can reproduce one known policy violation and identify the satellite/task/event IDs involved; controls also prove the baseline passes in the no-fault control case.
 
 ## Day 32: 11/11/2026
 **Task: Create the deterministic event trace and replay engine.** Record every state-changing event in stable order, including simulation time, entity IDs, event type, payload schema version and cause/source metadata. Replaying a run must reconstruct the same relevant state and outcomes.
@@ -514,7 +514,7 @@
 **Completion evidence:** one-command or clearly scripted end-to-end smoke path passes, every stage's outputs are trace-linked and an evidence pack verifies independently.
 
 ## Day 70: 19/12/2026 — G5 INTEGRATED BUILD GATE
-**Task: Freeze a runnable Tessera candidate with visual simulation, configurable virtual spacecraft, trained model artifacts and the testing engine integrated.** Run the complete automated suite and the demo scenario from a clean checkout. Confirm no stage requires physical hardware, cloud access or untracked local files.
+**Task: Freeze a runnable Constellab candidate with visual simulation, configurable virtual spacecraft, trained model artifacts and the testing engine integrated.** Run the complete automated suite and the demo scenario from a clean checkout. Confirm no stage requires physical hardware, cloud access or untracked local files.
 
 **Detailed execution:** Verify that the visual application still works with ML modules disabled, the policy still runs headlessly, simulator configs remain schema-versioned and supported parameters all have consumers. Re-run key model and search evaluations from saved manifests, check hashes and regenerate the final metric report from raw results. Do not claim that all models generalize to arbitrary customer configurations; state the validated config envelope and enforce compatibility/fallback behavior at runtime.
 
@@ -528,29 +528,29 @@ The exact CLI names may follow the implementation, but the final repository must
 
 ```bash
 # Validate a client scenario and print all parameter/configuration errors
-python -m tessera.cli validate scenarios/visual_orbit_demo.yaml
+python -m Constellab.cli validate scenarios/visual_orbit_demo.yaml
 
 # Run one deterministic simulation and save the canonical trace
-python -m tessera.cli run scenarios/wildfire_partition.yaml --seed 7 --out runs/seed-7/
+python -m Constellab.cli run scenarios/wildfire_partition.yaml --seed 7 --out runs/seed-7/
 
 # Generate a resumable set of randomized training episodes
-python -m tessera.ml.generate --config ml/configs/dataset.yaml --resume
+python -m Constellab.ml.generate --config ml/configs/dataset.yaml --resume
 
 # Train a selected registered model from a versioned training configuration
-python -m tessera.ml.train --config ml/configs/gnn_gru_bc.yaml
+python -m Constellab.ml.train --config ml/configs/gnn_gru_bc.yaml
 
 # Evaluate checkpoints against the frozen benchmark suite
-python -m tessera.ml.evaluate --suite evaluation/frozen_suite.yaml --checkpoint models/candidate/
+python -m Constellab.ml.evaluate --suite evaluation/frozen_suite.yaml --checkpoint models/candidate/
 
 # Search for failures using random or learned candidate ranking
-python -m tessera.cli search scenarios/search_suite.yaml --strategy adaptive --budget 10000 --seed 7
+python -m Constellab.cli search scenarios/search_suite.yaml --strategy adaptive --budget 10000 --seed 7
 
 # Minimize a failing scenario and replay the causal intervention
-python -m tessera.cli shrink evidence/failure-001/ --out evidence/minimized-001/
-python -m tessera.cli why evidence/minimized-001/ --intervention remove_link_cut
+python -m Constellab.cli shrink evidence/failure-001/ --out evidence/minimized-001/
+python -m Constellab.cli why evidence/minimized-001/ --intervention remove_link_cut
 
 # Verify all evidence hashes and re-run the reproducibility checks
-python -m tessera.cli verify evidence/final-pack/
+python -m Constellab.cli verify evidence/final-pack/
 ```
 
 ## Final acceptance conditions

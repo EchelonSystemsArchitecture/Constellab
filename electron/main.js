@@ -15,6 +15,7 @@ const { spawn } = require("child_process");
 const CORE_PORT = 8765;
 const DEV_SERVER_URL = "http://localhost:5173";
 const CORE_URL = `http://127.0.0.1:${CORE_PORT}`;
+const APP_ICON = path.join(__dirname, "..", "assets", "icons", process.platform === "win32" ? "icon.ico" : "icon.png");
 
 function appDir() {
   if (!app.isPackaged) return path.join(__dirname, "..", "..");
@@ -72,6 +73,7 @@ async function createWindow() {
     minHeight: 600,
     title: "ConstellaLab — Orbital Test Lab",
     backgroundColor: "#0b0e14",
+    icon: APP_ICON,
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
       contextIsolation: true,

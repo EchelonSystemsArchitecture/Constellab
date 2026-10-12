@@ -10,6 +10,7 @@
     "test": "node scripts/test.js",
     "status": "python -m constellab_core status",
     "fetch-python": "node scripts/fetch-python-embed.js",
+    "icon": "python scripts/make_icon.py",
     "dist:win": "npm run build && npm run fetch-python && electron-builder --win portable"
   },
   "devDependencies": {
@@ -28,9 +29,10 @@
   "build": {
     "appId": "ai.constellab.desktop",
     "productName": "ConstellaLab",
-    "icon": "icon.png",
+    "icon": "assets/icons/icon.ico",
     "files": [
       "electron/**/*",
+      "assets/icons/**/*",
       "core/**/*",
       "frontend/dist/**/*",
       "python/**/*"

@@ -1,3 +1,5 @@
+<p align="center"><img src="assets/icons/icon.png" alt="ConstellaLab logo" width="160"></p>
+
 # ConstellaLab — Day 1 Baseline
 
 **One-sentence:** Software-only crash-test lab for autonomous satellite swarms — Day 1: runnable code baseline + portable .exe application.
@@ -11,6 +13,7 @@
 | Build frontend | `npm run build` |
 | Fetch embedded Python | `npm run fetch-python` |
 | Build .exe (portable) | `npm run dist:win` |
+| Regenerate app icons from the logo | `npm run icon` |
 
 ## .exe Application
 
@@ -35,6 +38,7 @@ constellab/
   .gitignore       standard ignores
   vite.config.ts   Vite + React config
   pyproject.toml   Python package metadata
+  assets/icons/    official logo (icon.png) + generated icon.ico
   core/            Python constellab_core package
   frontend/        Vite + React + TS source
   electron/        Electron main + scripts
@@ -51,7 +55,14 @@ npm run dev       # Start core + Vite dev server
 npm run status    # Print core status as JSON
 npm run fetch-python  # Download embedded Python for .exe
 npm run dist:win  # Build portable .exe application
+npm run icon      # Regenerate icon.ico + favicon from assets/icons/icon.png (needs Pillow)
 ```
+
+## Branding
+
+The single official icon is `assets/icons/icon.png`. Everything else is derived from it with `npm run icon`:
+the Windows `.exe`/taskbar icon (`assets/icons/icon.ico`, via electron-builder and the Electron window) and the
+frontend favicon (`frontend/public/favicon.png`). Never hand-edit the derived files — replace `icon.png` and rerun.
 
 ## Day 1 Goal Achieved
 

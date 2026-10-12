@@ -10,7 +10,7 @@
     "typecheck": "tsc -p frontend --noEmit",
     "test": "node scripts/test.js",
     "test:core": "node scripts/py.js -m unittest discover -s core/tests -v",
-    "test:contract": "tsc -p frontend/tsconfig.test.json && node --test frontend/.test-out/contract/__tests__/",
+    "test:contract": "tsc -p frontend/tsconfig.test.json && node --test frontend/.test-out/contract/__tests__/contract.test.js",
     "gen:contract": "node scripts/py.js scripts/gen_contract.py",
     "status": "node scripts/py.js -m constellab_core status",
     "snapshot": "node scripts/py.js -m constellab_core snapshot",

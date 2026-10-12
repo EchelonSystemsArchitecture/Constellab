@@ -20,7 +20,7 @@ const steps = [
   ["Generated contract up to date", python, [path.join("scripts", "gen_contract.py"), "--check"]],
   ["Frontend type-check", process.execPath, [tsc, "-p", "frontend", "--noEmit"]],
   ["Compile contract tests", process.execPath, [tsc, "-p", path.join("frontend", "tsconfig.test.json")]],
-  ["TypeScript contract tests", process.execPath, ["--test", path.join("frontend", ".test-out", "contract", "__tests__") + path.sep]],
+  ["TypeScript contract tests", process.execPath, ["--test", path.join("frontend", ".test-out", "contract", "__tests__", "contract.test.js")]],
   ["Frontend build", process.execPath, [vite, "build"]],
 ];
 

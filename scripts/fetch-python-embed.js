@@ -57,10 +57,28 @@ function extractZip(zip, dest) {
   execFileSync(pythonCommand(), ["-m", "zipfile", "-e", zip, dest]);
 }
 
-async function main() {
+function syncCore() {
+  // Always refresh: the packaged exe runs the core from python/core, so a stale
+  // copy would silently ship old code even when the interpreter is cached.
+  const pthFile = fs.readdirSync(OUT_DIR).find((f) => /^python\d+\._pth$/.test(f));
+  if (pthFile) {
+    const pthPath = path.join(OUT_DIR, pthFile);
+    const content = fs.readFileSync(pthPath, "utf8");
+    if (!content.includes("./core")) fs.appendFileSync(pthPath, "./core\n");
+  }
+  const coreDst = path.join(OUT_DIR, "core");
+  fs.rmSync(coreDst, { recursive: true, force: true });
+  fs.cpSync(CORE_SRC, coreDst, {
+    recursive: true,
+    filter: (src) => !/(^|[\\/])(__pycache__|tests)([\\/]|$)/.test(path.relative(CORE_SRC, src)),
+  });
+  console.log("[fetch-python] core synced into python/core");
+}
+
+async function ensureInterpreter() {
   const marker = path.join(OUT_DIR, "python.exe");
   if (fs.existsSync(marker)) {
-    console.log("[fetch-python] embedded python already present, skipping");
+    console.log("[fetch-python] embedded python already present, skipping download");
     return;
   }
   fs.mkdirSync(OUT_DIR, { recursive: true });
@@ -74,31 +92,7 @@ async function main() {
       extractZip(tmpZip, OUT_DIR);
       fs.unlinkSync(tmpZip);
       if (!fs.existsSync(marker)) throw new Error("python.exe missing after extraction");
-
-      const pthFile = path.join(OUT_DIR, "python314._pth");
-      if (fs.existsSync(pthFile)) {
-        const content = fs.readFileSync(pthFile, "utf8");
-        if (!content.includes("./core")) {
-          fs.appendFileSync(pthFile, "./core\n");
-        }
-      }
-
-      const coreDst = path.join(OUT_DIR, "core");
-      if (fs.existsSync(coreDst)) {
-        fs.rmSync(coreDst, { recursive: true, force: true });
-      }
-      fs.mkdirSync(coreDst, { recursive: true });
-      for (const item of fs.readdirSync(CORE_SRC)) {
-        const src = path.join(CORE_SRC, item);
-        const dst = path.join(coreDst, item);
-        if (fs.statSync(src).isDirectory()) {
-          fs.cpSync(src, dst, { recursive: true });
-        } else {
-          fs.copyFileSync(src, dst);
-        }
-      }
-
-      console.log("[fetch-python] embedded python ready");
+      console.log(`[fetch-python] embedded python ${v.dir} ready`);
       return;
     } catch (err) {
       lastErr = err;
@@ -106,6 +100,11 @@ async function main() {
     }
   }
   throw lastErr;
+}
+
+async function main() {
+  await ensureInterpreter();
+  syncCore();
 }
 
 main().catch((err) => {

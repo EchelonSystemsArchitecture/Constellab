@@ -1,0 +1,369 @@
+// GENERATED FILE - do not edit. Source: core/constellab_core/data/simulation_contract.schema.json
+// Regenerate with: npm run gen:contract
+
+export const SCHEMA_VERSION = "1.0.0";
+
+/** The contract schema, embedded so the renderer can validate snapshots at runtime. */
+export const SIMULATION_CONTRACT_SCHEMA = {
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://constellab.ai/schemas/simulation_contract/1.0.0",
+  "title": "ConstellaLab simulation/visualization contract",
+  "x-schema-version": "1.0.0",
+  "description": "Single versioned source for the data exchanged between the simulation core and any renderer. Conventions: lengths in kilometres, velocities in kilometres per second, angles in degrees, durations in seconds. Positions and velocities are expressed in a non-rotating Earth-centred inertial (ECI) frame whose axes are fixed at the scenario epoch; Earth rotation and precession are not modelled. `epoch_utc` is an ISO 8601 UTC instant (suffix Z); `simulation_time_s` counts simulated seconds since that epoch and is owned exclusively by the core. Optional fields may be omitted (defaults apply) but may not be null; unknown fields are rejected. Array position is never an identity: every entity carries a stable `id`. Compatibility rule: a payload is accepted when its schema_version has the same major version as this document and a minor version not greater than this document's.",
+  "$defs": {
+    "SchemaVersion": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$",
+      "description": "Semantic version of the contract the payload was produced against."
+    },
+    "EntityId": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9_-]{0,63}$",
+      "description": "Stable, human-readable identifier. Never derive identity from array order."
+    },
+    "UtcTimestamp": {
+      "type": "string",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]{1,6})?Z$",
+      "description": "ISO 8601 instant in UTC with a mandatory Z suffix."
+    },
+    "Vector3Km": {
+      "type": "array",
+      "items": {
+        "type": "number"
+      },
+      "minItems": 3,
+      "maxItems": 3,
+      "description": "Cartesian [x, y, z] in kilometres, ECI frame."
+    },
+    "Vector3KmPerS": {
+      "type": "array",
+      "items": {
+        "type": "number"
+      },
+      "minItems": 3,
+      "maxItems": 3,
+      "description": "Cartesian [vx, vy, vz] in kilometres per second, ECI frame."
+    },
+    "VersionMetadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "version"
+      ],
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64,
+          "description": "Producer component, e.g. constellab-core."
+        },
+        "version": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64,
+          "description": "Producer release version."
+        }
+      },
+      "description": "Identifies the component that produced a payload."
+    },
+    "OrbitElements": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "semi_major_axis_km",
+        "eccentricity",
+        "inclination_deg",
+        "raan_deg",
+        "argument_of_perigee_deg",
+        "true_anomaly_deg"
+      ],
+      "properties": {
+        "semi_major_axis_km": {
+          "type": "number",
+          "exclusiveMinimum": 6378.137,
+          "maximum": 1000000,
+          "description": "Semi-major axis; must exceed Earth's equatorial radius."
+        },
+        "eccentricity": {
+          "type": "number",
+          "minimum": 0,
+          "exclusiveMaximum": 1,
+          "description": "Closed orbits only."
+        },
+        "inclination_deg": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 180
+        },
+        "raan_deg": {
+          "type": "number",
+          "minimum": 0,
+          "exclusiveMaximum": 360,
+          "description": "Right ascension of the ascending node."
+        },
+        "argument_of_perigee_deg": {
+          "type": "number",
+          "minimum": 0,
+          "exclusiveMaximum": 360
+        },
+        "true_anomaly_deg": {
+          "type": "number",
+          "minimum": 0,
+          "exclusiveMaximum": 360,
+          "description": "True anomaly at the scenario epoch."
+        }
+      },
+      "description": "Classical Keplerian elements referenced to the ECI frame at epoch. Illustrative two-body model; no perturbations."
+    },
+    "SimulationClock": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "epoch_utc",
+        "simulation_time_s",
+        "time_scale",
+        "paused"
+      ],
+      "properties": {
+        "epoch_utc": {
+          "$ref": "#/$defs/UtcTimestamp"
+        },
+        "simulation_time_s": {
+          "type": "number",
+          "minimum": 0,
+          "description": "Simulated seconds elapsed since epoch_utc."
+        },
+        "time_scale": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 1000000,
+          "description": "Simulated seconds advanced per real second while running."
+        },
+        "paused": {
+          "type": "boolean"
+        }
+      },
+      "description": "Canonical clock state. Only the core advances it; renderers display it."
+    },
+    "SatelliteConfig": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "orbit"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/EntityId"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "description": "Display label; defaults to id."
+        },
+        "orbit": {
+          "$ref": "#/$defs/OrbitElements"
+        }
+      },
+      "description": "Initial definition of one virtual satellite (configuration, not runtime state)."
+    },
+    "SimulationConfig": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "scenario_id",
+        "seed",
+        "epoch_utc",
+        "satellites"
+      ],
+      "properties": {
+        "schema_version": {
+          "$ref": "#/$defs/SchemaVersion"
+        },
+        "scenario_id": {
+          "$ref": "#/$defs/EntityId"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "description": "Display name; defaults to scenario_id."
+        },
+        "seed": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 9007199254740991,
+          "description": "Master seed; must round-trip through IEEE doubles."
+        },
+        "epoch_utc": {
+          "$ref": "#/$defs/UtcTimestamp"
+        },
+        "time_scale": {
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 1000000,
+          "default": 1
+        },
+        "satellites": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/SatelliteConfig"
+          },
+          "maxItems": 10000,
+          "x-unique-by": "id"
+        }
+      },
+      "description": "Everything needed to start a deterministic scenario. Contains no runtime state."
+    },
+    "SatelliteState": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "position_eci_km",
+        "velocity_eci_km_s"
+      ],
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/EntityId"
+        },
+        "position_eci_km": {
+          "$ref": "#/$defs/Vector3Km"
+        },
+        "velocity_eci_km_s": {
+          "$ref": "#/$defs/Vector3KmPerS"
+        },
+        "orbit": {
+          "$ref": "#/$defs/OrbitElements",
+          "description": "Osculating elements, when the producer tracks them."
+        }
+      },
+      "description": "Runtime state of one satellite at the snapshot's simulation time."
+    },
+    "SimulationSnapshot": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "schema_version",
+        "scenario_id",
+        "producer",
+        "clock",
+        "satellites"
+      ],
+      "properties": {
+        "schema_version": {
+          "$ref": "#/$defs/SchemaVersion"
+        },
+        "scenario_id": {
+          "$ref": "#/$defs/EntityId"
+        },
+        "producer": {
+          "$ref": "#/$defs/VersionMetadata"
+        },
+        "clock": {
+          "$ref": "#/$defs/SimulationClock"
+        },
+        "satellites": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/SatelliteState"
+          },
+          "maxItems": 10000,
+          "x-unique-by": "id"
+        }
+      },
+      "description": "Immutable view of the canonical simulation state. Renderers consume it as-is and never recompute positions."
+    }
+  }
+} as const;
+
+/** Semantic version of the contract the payload was produced against. */
+export type SchemaVersion = string;
+
+/** Stable, human-readable identifier. Never derive identity from array order. */
+export type EntityId = string;
+
+/** ISO 8601 instant in UTC with a mandatory Z suffix. */
+export type UtcTimestamp = string;
+
+/** Cartesian [x, y, z] in kilometres, ECI frame. */
+export type Vector3Km = [number, number, number];
+
+/** Cartesian [vx, vy, vz] in kilometres per second, ECI frame. */
+export type Vector3KmPerS = [number, number, number];
+
+/** Identifies the component that produced a payload. */
+export interface VersionMetadata {
+  /** Producer component, e.g. constellab-core. */
+  name: string;
+  /** Producer release version. */
+  version: string;
+}
+
+/** Classical Keplerian elements referenced to the ECI frame at epoch. Illustrative two-body model; no perturbations. */
+export interface OrbitElements {
+  /** Semi-major axis; must exceed Earth's equatorial radius. */
+  semi_major_axis_km: number;
+  /** Closed orbits only. */
+  eccentricity: number;
+  inclination_deg: number;
+  /** Right ascension of the ascending node. */
+  raan_deg: number;
+  argument_of_perigee_deg: number;
+  /** True anomaly at the scenario epoch. */
+  true_anomaly_deg: number;
+}
+
+/** Canonical clock state. Only the core advances it; renderers display it. */
+export interface SimulationClock {
+  epoch_utc: UtcTimestamp;
+  /** Simulated seconds elapsed since epoch_utc. */
+  simulation_time_s: number;
+  /** Simulated seconds advanced per real second while running. */
+  time_scale: number;
+  paused: boolean;
+}
+
+/** Initial definition of one virtual satellite (configuration, not runtime state). */
+export interface SatelliteConfig {
+  id: EntityId;
+  /** Display label; defaults to id. */
+  name?: string;
+  orbit: OrbitElements;
+}
+
+/** Everything needed to start a deterministic scenario. Contains no runtime state. */
+export interface SimulationConfig {
+  schema_version: SchemaVersion;
+  scenario_id: EntityId;
+  /** Display name; defaults to scenario_id. */
+  name?: string;
+  /** Master seed; must round-trip through IEEE doubles. */
+  seed: number;
+  epoch_utc: UtcTimestamp;
+  time_scale?: number;
+  satellites: SatelliteConfig[];
+}
+
+/** Runtime state of one satellite at the snapshot's simulation time. */
+export interface SatelliteState {
+  id: EntityId;
+  position_eci_km: Vector3Km;
+  velocity_eci_km_s: Vector3KmPerS;
+  /** Osculating elements, when the producer tracks them. */
+  orbit?: OrbitElements;
+}
+
+/** Immutable view of the canonical simulation state. Renderers consume it as-is and never recompute positions. */
+export interface SimulationSnapshot {
+  schema_version: SchemaVersion;
+  scenario_id: EntityId;
+  producer: VersionMetadata;
+  clock: SimulationClock;
+  satellites: SatelliteState[];
+}
+
+export type DefinitionName = "SchemaVersion" | "EntityId" | "UtcTimestamp" | "Vector3Km" | "Vector3KmPerS" | "VersionMetadata" | "OrbitElements" | "SimulationClock" | "SatelliteConfig" | "SimulationConfig" | "SatelliteState" | "SimulationSnapshot";

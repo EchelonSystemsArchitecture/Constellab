@@ -1,7 +1,8 @@
 /**
  * Fetches the official embedded Python distribution for Windows and unpacks
  * it into ./python so the packaged .exe is self-contained (no system Python
- * required). Idempotent: skips the download when already present.
+ * required). Idempotent: skips the download when already present. Works on
+ * Windows (PowerShell) and on Linux/macOS cross-build hosts (python zipfile).
  *
  * Tries the newest 3.14.x embed first, then falls back to 3.12.x.
  */
@@ -9,6 +10,7 @@ const fs = require("fs");
 const https = require("https");
 const path = require("path");
 const { execFileSync } = require("child_process");
+const { pythonCommand } = require("./py");
 
 const OUT_DIR = path.join(__dirname, "..", "python");
 const CORE_SRC = path.join(__dirname, "..", "core");
@@ -42,6 +44,19 @@ function download(url, dest) {
   });
 }
 
+function extractZip(zip, dest) {
+  if (process.platform === "win32") {
+    execFileSync("powershell", [
+      "-NoProfile",
+      "-Command",
+      `Expand-Archive -LiteralPath '${zip}' -DestinationPath '${dest}' -Force`,
+    ]);
+    return;
+  }
+  // Linux/macOS build hosts: Python's zipfile module is always available.
+  execFileSync(pythonCommand(), ["-m", "zipfile", "-e", zip, dest]);
+}
+
 async function main() {
   const marker = path.join(OUT_DIR, "python.exe");
   if (fs.existsSync(marker)) {
@@ -56,11 +71,7 @@ async function main() {
     try {
       console.log(`[fetch-python] downloading ${url}`);
       await download(url, tmpZip);
-      execFileSync("powershell", [
-        "-NoProfile",
-        "-Command",
-        `Expand-Archive -LiteralPath '${tmpZip}' -DestinationPath '${OUT_DIR}' -Force`,
-      ]);
+      extractZip(tmpZip, OUT_DIR);
       fs.unlinkSync(tmpZip);
       if (!fs.existsSync(marker)) throw new Error("python.exe missing after extraction");
 

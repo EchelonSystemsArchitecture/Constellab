@@ -1,9 +1,13 @@
 """ConstellaLab simulation core.
 
-Day 1 baseline: a minimal, dependency-free simulation service that reports
-version/status, exposes a health endpoint and validates scenario configuration.
-No inter-satellite communication or swarm coordination exists at this stage.
+Day 2: the simulation/visualization contract. A stdlib-only service that
+validates scenario configuration against the versioned JSON Schema in
+``data/simulation_contract.schema.json`` and serves canonical snapshots to the
+renderer. No inter-satellite communication or swarm coordination exists yet.
 """
 
-__version__ = "0.1.0"
-SCHEMA_VERSION = 1
+from .contract import SCHEMA_VERSION
+
+__version__ = "0.2.0"
+
+__all__ = ["SCHEMA_VERSION", "__version__"]

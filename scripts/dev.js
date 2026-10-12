@@ -6,13 +6,15 @@
  */
 const { spawn } = require("child_process");
 const path = require("path");
+const { pythonCommand, pythonEnv } = require("./py");
 
 const root = path.join(__dirname, "..");
 const coreDir = path.join(root, "core");
 
 const procs = [
-  spawn("python", ["-m", "constellab_core", "serve", "--port", "8765"], {
+  spawn(pythonCommand(), ["-m", "constellab_core", "serve", "--port", "8765"], {
     cwd: coreDir,
+    env: pythonEnv(),
     stdio: ["ignore", "pipe", "pipe"],
     shell: false,
   }),

@@ -1,6 +1,7 @@
 node_modules/
 dist/
 frontend/dist/
+frontend/.test-out/
 dist-electron/
 python/
 __pycache__/
@@ -33,8 +34,13 @@ coverage/
 .env.local
 .env.*.local
 *.vsix
-dist-electron-working/
-dist-electron-final/
-dist-electron-fixed/
-dist-electron-new/
 dist-electron-ready/
+
+# generated simulation data / ML artefacts (never commit blobs)
+runs/
+evidence/
+models/
+data/raw/
+*.ckpt
+*.pt
+*.npz

@@ -1,0 +1,10 @@
+{
+  "description": "Snapshot payloads a renderer must reject, with the field paths that must appear in the diagnostics.",
+  "cases": [
+    { "name": "incompatible major version", "snapshot": { "schema_version": "2.0.0", "scenario_id": "empty", "producer": { "name": "constellab-core", "version": "0.2.0" }, "clock": { "epoch_utc": "2026-10-12T00:00:00Z", "simulation_time_s": 0, "time_scale": 1, "paused": true }, "satellites": [] }, "expect_paths": ["$.schema_version"] },
+    { "name": "missing clock", "snapshot": { "schema_version": "1.0.0", "scenario_id": "empty", "producer": { "name": "constellab-core", "version": "0.2.0" }, "satellites": [] }, "expect_paths": ["$.clock"] },
+    { "name": "position with two components", "snapshot": { "schema_version": "1.0.0", "scenario_id": "x", "producer": { "name": "constellab-core", "version": "0.2.0" }, "clock": { "epoch_utc": "2026-10-12T00:00:00Z", "simulation_time_s": 0, "time_scale": 1, "paused": true }, "satellites": [ { "id": "a", "position_eci_km": [1, 2], "velocity_eci_km_s": [0, 0, 0] } ] }, "expect_paths": ["$.satellites[0].position_eci_km"] },
+    { "name": "negative simulation time", "snapshot": { "schema_version": "1.0.0", "scenario_id": "x", "producer": { "name": "constellab-core", "version": "0.2.0" }, "clock": { "epoch_utc": "2026-10-12T00:00:00Z", "simulation_time_s": -1, "time_scale": 1, "paused": false }, "satellites": [] }, "expect_paths": ["$.clock.simulation_time_s"] },
+    { "name": "unknown field in satellite state", "snapshot": { "schema_version": "1.0.0", "scenario_id": "x", "producer": { "name": "constellab-core", "version": "0.2.0" }, "clock": { "epoch_utc": "2026-10-12T00:00:00Z", "simulation_time_s": 0, "time_scale": 1, "paused": true }, "satellites": [ { "id": "a", "position_eci_km": [7000, 0, 0], "velocity_eci_km_s": [0, 7.5, 0], "color": "red" } ] }, "expect_paths": ["$.satellites[0].color"] }
+  ]
+}

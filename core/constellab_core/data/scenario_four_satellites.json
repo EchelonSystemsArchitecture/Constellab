@@ -1,0 +1,58 @@
+{
+  "schema_version": "1.0.0",
+  "scenario_id": "visual-orbit-demo",
+  "name": "Visual orbit demo (four illustrative satellites)",
+  "seed": 7,
+  "epoch_utc": "2026-10-12T00:00:00Z",
+  "time_scale": 60,
+  "satellites": [
+    {
+      "id": "sat-alpha",
+      "name": "Alpha",
+      "orbit": {
+        "semi_major_axis_km": 6928.137,
+        "eccentricity": 0.001,
+        "inclination_deg": 97.6,
+        "raan_deg": 0,
+        "argument_of_perigee_deg": 0,
+        "true_anomaly_deg": 0
+      }
+    },
+    {
+      "id": "sat-bravo",
+      "name": "Bravo",
+      "orbit": {
+        "semi_major_axis_km": 6928.137,
+        "eccentricity": 0.001,
+        "inclination_deg": 97.6,
+        "raan_deg": 0,
+        "argument_of_perigee_deg": 0,
+        "true_anomaly_deg": 90
+      }
+    },
+    {
+      "id": "sat-charlie",
+      "name": "Charlie",
+      "orbit": {
+        "semi_major_axis_km": 7178.137,
+        "eccentricity": 0.0005,
+        "inclination_deg": 53,
+        "raan_deg": 120,
+        "argument_of_perigee_deg": 0,
+        "true_anomaly_deg": 45
+      }
+    },
+    {
+      "id": "sat-delta",
+      "name": "Delta",
+      "orbit": {
+        "semi_major_axis_km": 26560,
+        "eccentricity": 0.01,
+        "inclination_deg": 55,
+        "raan_deg": 240,
+        "argument_of_perigee_deg": 30,
+        "true_anomaly_deg": 200
+      }
+    }
+  ]
+}

@@ -117,3 +117,49 @@ body {
   font-size: 12px;
   flex-shrink: 0;
 }
+
+.mono {
+  font-family: "Cascadia Code", "JetBrains Mono", Consolas, monospace;
+  font-size: 12px;
+}
+
+.scene-shell__note,
+.scene-shell__error {
+  margin-top: 16px;
+  color: var(--muted);
+}
+
+.scene-shell__error {
+  color: var(--down);
+  text-align: left;
+}
+
+.snapshot {
+  margin-top: 20px;
+  text-align: left;
+}
+
+.snapshot__clock {
+  color: var(--muted);
+  margin-bottom: 10px;
+}
+
+.snapshot__table {
+  border-collapse: collapse;
+  background: var(--panel);
+  border: 1px solid var(--border);
+}
+
+.snapshot__table th,
+.snapshot__table td {
+  padding: 6px 12px;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  color: var(--text);
+}
+
+.snapshot__table th {
+  color: var(--muted);
+  font-weight: 600;
+  font-size: 12px;
+}

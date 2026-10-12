@@ -1,7 +1,7 @@
 /**
  * ConstellaLab desktop shell (Electron).
  *
- * Day 1: launches the local Python core service and hosts the frontend.
+ * Launches the local Python core service and hosts the frontend.
  * In development it starts vite's dev server; in the packaged .exe it serves
  * the prebuilt frontend and runs the embedded Python interpreter, so the
  * application is fully self-contained and reproducible on Windows.
@@ -15,9 +15,10 @@ const { spawn } = require("child_process");
 const CORE_PORT = 8765;
 const DEV_SERVER_URL = "http://localhost:5173";
 const CORE_URL = `http://127.0.0.1:${CORE_PORT}`;
+const APP_ICON = path.join(__dirname, "..", "assets", "icons", process.platform === "win32" ? "icon.ico" : "icon.png");
 
 function appDir() {
-  if (!app.isPackaged) return path.join(__dirname, "..", "..");
+  if (!app.isPackaged) return path.join(__dirname, "..");
   return process.resourcesPath;
 }
 
@@ -46,7 +47,7 @@ function startCore() {
     pythonExe = path.join(process.resourcesPath, "app.asar.unpacked", "python", "python.exe");
     cwd = path.join(process.resourcesPath, "app.asar.unpacked", "python");
   } else {
-    pythonExe = "python";
+    pythonExe = require("../scripts/py").pythonCommand();
     cwd = path.join(dir, "core");
   }
   console.log(`[ConstellaLab] Starting core with python: ${pythonExe}, cwd: ${cwd}`);
@@ -72,6 +73,7 @@ async function createWindow() {
     minHeight: 600,
     title: "ConstellaLab — Orbital Test Lab",
     backgroundColor: "#0b0e14",
+    icon: APP_ICON,
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
       contextIsolation: true,

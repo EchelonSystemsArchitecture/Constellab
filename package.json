@@ -1,15 +1,21 @@
 {
   "name": "constellab",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
-  "description": "ConstellaLab — software-only crash-test lab for autonomous satellite swarms",
+  "description": "ConstellaLab \u2014 software-only crash-test lab for autonomous satellite swarms",
   "main": "electron/main.js",
   "scripts": {
     "dev": "node scripts/dev.js",
     "build": "vite build",
+    "typecheck": "tsc -p frontend --noEmit",
     "test": "node scripts/test.js",
-    "status": "python -m constellab_core status",
+    "test:core": "node scripts/py.js -m unittest discover -s core/tests -v",
+    "test:contract": "tsc -p frontend/tsconfig.test.json && node --test frontend/.test-out/contract/__tests__/contract.test.js",
+    "gen:contract": "node scripts/py.js scripts/gen_contract.py",
+    "status": "node scripts/py.js -m constellab_core status",
+    "snapshot": "node scripts/py.js -m constellab_core snapshot",
     "fetch-python": "node scripts/fetch-python-embed.js",
+    "icon": "node scripts/py.js scripts/make_icon.py",
     "dist:win": "npm run build && npm run fetch-python && electron-builder --win portable"
   },
   "devDependencies": {
@@ -28,9 +34,10 @@
   "build": {
     "appId": "ai.constellab.desktop",
     "productName": "ConstellaLab",
-    "icon": "icon.png",
+    "icon": "assets/icons/icon.ico",
     "files": [
       "electron/**/*",
+      "assets/icons/**/*",
       "core/**/*",
       "frontend/dist/**/*",
       "python/**/*"
@@ -47,7 +54,9 @@
       "target": [
         {
           "target": "portable",
-          "arch": ["x64"]
+          "arch": [
+            "x64"
+          ]
         }
       ],
       "artifactName": "ConstellaLab-Portable-${version}.exe",

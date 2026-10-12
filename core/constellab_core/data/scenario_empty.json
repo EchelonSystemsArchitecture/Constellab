@@ -1,0 +1,8 @@
+{
+  "schema_version": "1.0.0",
+  "scenario_id": "empty",
+  "name": "Empty scenario",
+  "seed": 0,
+  "epoch_utc": "2026-10-12T00:00:00Z",
+  "satellites": []
+}

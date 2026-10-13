@@ -12,11 +12,9 @@ import { SCENE_CONFIG } from "./scene/config";
 import { createEarthWorld } from "./scene/EarthWorld";
 import { BROWSER_RUNTIME, startViewport } from "./scene/lifecycle";
 
-export function LoadingScreen({ onReady }: { onReady: () => void }) {
+export function LoadingScreen({ onEnter }: { onEnter: () => void }) {
   const viewport = useRef<HTMLDivElement>(null);
-  const [status, setStatus] = useState("initializing core…");
-  const onReadyRef = useRef(onReady);
-  onReadyRef.current = onReady;
+  const [ready, setReady] = useState(false);
 
   useEffect(() => {
     if (!viewport.current) return;
@@ -68,23 +66,37 @@ export function LoadingScreen({ onReady }: { onReady: () => void }) {
         },
       }, BROWSER_RUNTIME, config.renderer.maxPixelRatio);
     } catch {
-      setStatus("3D unavailable — loading without preview");
+      // 3D unavailable, continue without it
     }
 
-    const statusTimer = setTimeout(() => {
-      setStatus("connecting to core…");
-    }, 1500);
-
-    const readyTimer = setTimeout(() => {
-      onReadyRef.current();
-    }, 3500);
+    // Mark ready after a short delay so user sees the loading screen
+    const timer = setTimeout(() => setReady(true), 800);
 
     return () => {
-      clearTimeout(statusTimer);
-      clearTimeout(readyTimer);
+      clearTimeout(timer);
       stopViewport?.();
     };
   }, []);
+
+  if (!ready) {
+    return (
+      <div className="loading-screen">
+        <div className="loading-screen__content">
+          <div className="loading-screen__brand">
+            <span className="loading-screen__logo">◆</span>
+            <h1 className="loading-screen__title">constellab</h1>
+          </div>
+          <p className="loading-screen__tagline">software-only crash-test lab for autonomous satellite swarms</p>
+          <div className="loading-screen__status">
+            <span className="loading-screen__spinner" />
+            <span className="loading-screen__status-text">initializing…</span>
+          </div>
+        </div>
+        <div className="loading-screen__viewport" ref={viewport} />
+        <div className="loading-screen__vignette" />
+      </div>
+    );
+  }
 
   return (
     <div className="loading-screen">
@@ -94,10 +106,9 @@ export function LoadingScreen({ onReady }: { onReady: () => void }) {
           <h1 className="loading-screen__title">constellab</h1>
         </div>
         <p className="loading-screen__tagline">software-only crash-test lab for autonomous satellite swarms</p>
-        <div className="loading-screen__status">
-          <span className="loading-screen__spinner" />
-          <span className="loading-screen__status-text">{status}</span>
-        </div>
+        <button className="loading-screen__enter-btn" onClick={onEnter}>
+          Enter
+        </button>
       </div>
       <div className="loading-screen__viewport" ref={viewport} />
       <div className="loading-screen__vignette" />

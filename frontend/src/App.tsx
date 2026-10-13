@@ -29,7 +29,7 @@ export default function App() {
   const [statusError, setStatusError] = useState<string | null>(null);
   const [snapshot, setSnapshot] = useState<SnapshotState>({ kind: "loading" });
 
-  const handleLoadingDone = useCallback(() => {
+  const handleEnter = useCallback(() => {
     setShowLoading(false);
   }, []);
 
@@ -66,7 +66,7 @@ export default function App() {
   }, [showLoading]);
 
   if (showLoading) {
-    return <LoadingScreen onReady={handleLoadingDone} />;
+    return <LoadingScreen onEnter={handleEnter} />;
   }
 
   return (

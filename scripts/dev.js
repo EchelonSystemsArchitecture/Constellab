@@ -19,15 +19,15 @@ const procs = [
   }),
 ];
 
-let electronStarted = false;
-function startElectron() {
-  if (electronStarted) return;
-  electronStarted = true;
+let electronLaunched = false;
+function tryLaunchElectron() {
+  if (electronLaunched) return;
   const viteProc = procs[1];
   viteProc.stdout.on("data", (d) => {
     const text = d.toString();
-    if (text.includes("Local:") && !electronStarted) {
-      electronStarted = true;
+    if (text.includes("Local:") && !electronLaunched) {
+      electronLaunched = true;
+      console.log("[dev] Vite ready, launching Electron...");
       const electron = spawn("npx", ["electron", "."], {
         cwd: root,
         stdio: ["ignore", "pipe", "pipe"],
@@ -57,7 +57,11 @@ for (const p of procs) {
   });
 }
 
-setTimeout(startElectron, 2000);
+// Try launching Electron after Vite prints "Local:"
+tryLaunchElectron();
+
+// Also set a fallback timeout
+setTimeout(tryLaunchElectron, 3000);
 
 function shutdown() {
   for (const p of procs) {

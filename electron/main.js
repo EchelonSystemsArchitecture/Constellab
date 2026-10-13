@@ -1,12 +1,4 @@
-/**
- * ConstellaLab desktop shell (Electron).
- *
- * Launches the local Python core service and hosts the frontend.
- * In development it starts vite's dev server; in the packaged .exe it serves
- * the prebuilt frontend and runs the embedded Python interpreter, so the
- * application is fully self-contained and reproducible on Windows.
- */
-const { app, BrowserWindow, dialog } = require("electron");
+const { app, BrowserWindow, dialog, Menu, shell } = require("electron");
 const fs = require("fs");
 const http = require("http");
 const path = require("path");
@@ -65,22 +57,74 @@ function startCore() {
   return child;
 }
 
+function createMenu() {
+  const template = [
+    {
+      label: "File",
+      submenu: [
+        { role: "quit" }
+      ]
+    },
+    {
+      label: "View",
+      submenu: [
+        { role: "reload" },
+        { role: "toggleDevTools" },
+        { type: "separator" },
+        { role: "resetZoom" },
+        { role: "zoomIn" },
+        { role: "zoomOut" },
+        { type: "separator" },
+        { role: "togglefullscreen" }
+      ]
+    },
+    {
+      label: "Help",
+      submenu: [
+        {
+          label: "ConstellaLab v" + app.getVersion(),
+          enabled: false
+        }
+      ]
+    }
+  ];
+  Menu.setApplicationMenu(Menu.buildFromTemplate(template));
+}
+
 async function createWindow() {
   const win = new BrowserWindow({
     width: 1440,
     height: 900,
     minWidth: 960,
     minHeight: 600,
-    title: "ConstellaLab — Orbital Test Lab",
-    backgroundColor: "#0b0e14",
+    title: "ConstellaLab",
+    backgroundColor: "#1e1e1e",
     icon: APP_ICON,
+    frame: true,
+    show: false,
     webPreferences: {
       preload: path.join(__dirname, "preload.js"),
       contextIsolation: true,
       nodeIntegration: false,
+      sandbox: false,
     },
   });
-  win.setMenuBarVisibility(false);
+
+  win.once("ready-to-show", () => {
+    win.show();
+  });
+
+  win.webContents.setWindowOpenHandler(({ url }) => {
+    shell.openExternal(url);
+    return { action: "deny" };
+  });
+
+  win.webContents.on("context-menu", (event, params) => {
+    if (params.isEditable || params.selectionText) {
+      return;
+    }
+    event.preventDefault();
+  });
 
   if (app.isPackaged) {
     await win.loadFile(path.join(process.resourcesPath, "app.asar.unpacked", "frontend", "dist", "index.html"));
@@ -91,6 +135,7 @@ async function createWindow() {
 }
 
 app.whenReady().then(async () => {
+  createMenu();
   const core = startCore();
   app.coreChild = core;
   try {

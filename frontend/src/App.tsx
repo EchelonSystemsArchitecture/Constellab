@@ -1,5 +1,6 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { ContractError, SCHEMA_VERSION, SimulationSnapshot, parseSnapshot } from "./contract";
+import { LoadingScreen } from "./LoadingScreen";
 import { SceneShell } from "./scene/SceneShell";
 
 interface CoreStatus {
@@ -23,11 +24,17 @@ async function fetchJson(path: string): Promise<unknown> {
 }
 
 export default function App() {
+  const [showLoading, setShowLoading] = useState(true);
   const [status, setStatus] = useState<CoreStatus | null>(null);
   const [statusError, setStatusError] = useState<string | null>(null);
   const [snapshot, setSnapshot] = useState<SnapshotState>({ kind: "loading" });
 
+  const handleLoadingDone = useCallback(() => {
+    setShowLoading(false);
+  }, []);
+
   useEffect(() => {
+    if (showLoading) return;
     let cancelled = false;
     fetchJson("/api/status")
       .then((data) => {
@@ -56,7 +63,11 @@ export default function App() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [showLoading]);
+
+  if (showLoading) {
+    return <LoadingScreen onReady={handleLoadingDone} />;
+  }
 
   return (
     <div className="app">

@@ -47,13 +47,23 @@ export function SceneShell({ snapshot }: { snapshot: SnapshotState }) {
       <div className="scene-shell__viewport" ref={viewport} data-testid="earth-viewport" />
       <div className="scene-shell__toolbar">
         <div>
-          <div className="scene-shell__title">Earth / orbital viewport</div>
+          <div className="scene-shell__title">Earth / Orbital Viewport</div>
           <div className="scene-shell__subtitle">Offline schematic texture · fixed Earth · ECI reference</div>
         </div>
         <div className="scene-shell__controls" role="group" aria-label="Camera controls">
-          <button disabled={!!sceneError} onClick={() => scene.current?.zoom("in")} aria-label="Zoom in">+</button>
-          <button disabled={!!sceneError} onClick={() => scene.current?.zoom("out")} aria-label="Zoom out">−</button>
-          <button disabled={!!sceneError} onClick={() => scene.current?.reset()}>Reset view</button>
+          <button disabled={!!sceneError} onClick={() => scene.current?.zoom("in")} aria-label="Zoom in">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <path d="M7 1v12M1 7h12" />
+            </svg>
+          </button>
+          <button disabled={!!sceneError} onClick={() => scene.current?.zoom("out")} aria-label="Zoom out">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" strokeWidth="1.5">
+              <path d="M1 7h12" />
+            </svg>
+          </button>
+          <button disabled={!!sceneError} onClick={() => scene.current?.reset()}>
+            Reset view
+          </button>
         </div>
       </div>
       {sceneError && (
@@ -65,7 +75,12 @@ export function SceneShell({ snapshot }: { snapshot: SnapshotState }) {
       )}
       <div className="scene-shell__telemetry">
         <div className="scene-shell__hint">Drag to orbit · scroll / pinch to zoom · satellites &amp; paths arrive Day 4</div>
-        {snapshot.kind === "loading" && <div className="scene-shell__note">waiting for snapshot…</div>}
+        {snapshot.kind === "loading" && (
+          <div className="scene-shell__note">
+            <span className="loading-screen__spinner" style={{ display: "inline-block", verticalAlign: "middle", marginRight: 8 }} />
+            waiting for snapshot…
+          </div>
+        )}
         {snapshot.kind === "rejected" && (
           <div className="scene-shell__error" data-testid="snapshot-error">
             <div>{snapshot.reason}</div>
@@ -85,21 +100,21 @@ export function SceneShell({ snapshot }: { snapshot: SnapshotState }) {
               <details className="snapshot__details">
                 <summary>Core state / {snapshot.snapshot.satellites.length} satellites (not yet rendered)</summary>
                 <div className="snapshot__scroll">
-              <table className="snapshot__table">
-                <thead>
-                  <tr>
-                    <th>id</th>
-                    <th>position ECI (km)</th>
-                    <th>velocity ECI (km/s)</th>
-                    <th>a / i</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {snapshot.snapshot.satellites.map((sat) => (
-                    <SatelliteRow key={sat.id} sat={sat} />
-                  ))}
-                </tbody>
-              </table>
+                  <table className="snapshot__table">
+                    <thead>
+                      <tr>
+                        <th>ID</th>
+                        <th>Position ECI (km)</th>
+                        <th>Velocity ECI (km/s)</th>
+                        <th>a / i</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {snapshot.snapshot.satellites.map((sat) => (
+                        <SatelliteRow key={sat.id} sat={sat} />
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               </details>
             )}

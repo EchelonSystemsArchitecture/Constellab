@@ -1,9 +1,3 @@
-/**
- * Single-command development launcher.
- *
- * Starts the Python core service and the Vite dev server as child processes,
- * pipes their output to the terminal and shuts both down on Ctrl+C.
- */
 const { spawn } = require("child_process");
 const path = require("path");
 const { pythonCommand, pythonEnv } = require("./py");
@@ -25,6 +19,33 @@ const procs = [
   }),
 ];
 
+let electronStarted = false;
+function startElectron() {
+  if (electronStarted) return;
+  electronStarted = true;
+  const viteProc = procs[1];
+  viteProc.stdout.on("data", (d) => {
+    const text = d.toString();
+    if (text.includes("Local:") && !electronStarted) {
+      electronStarted = true;
+      const electron = spawn("npx", ["electron", "."], {
+        cwd: root,
+        stdio: ["ignore", "pipe", "pipe"],
+        shell: true,
+      });
+      electron.stdout.on("data", (d) => process.stdout.write(d));
+      electron.stderr.on("data", (d) => process.stderr.write(d));
+      electron.on("exit", (code) => {
+        if (code !== null && code !== 0) {
+          console.error(`[dev] electron exited with code ${code}`);
+          shutdown();
+        }
+      });
+      procs.push(electron);
+    }
+  });
+}
+
 for (const p of procs) {
   p.stdout.on("data", (d) => process.stdout.write(d));
   p.stderr.on("data", (d) => process.stderr.write(d));
@@ -35,6 +56,8 @@ for (const p of procs) {
     }
   });
 }
+
+setTimeout(startElectron, 2000);
 
 function shutdown() {
   for (const p of procs) {

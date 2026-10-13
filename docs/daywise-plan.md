@@ -44,12 +44,14 @@
 
 **Completion evidence:** versioned state/config schemas, generated or contract-tested frontend/backend types, round-trip serialization tests and predictable errors for missing fields, invalid units and incompatible schema versions.
 
-## Day 3: 13/10/2026
+## Day 3: 13/10/2026 ✅
 **Task: Implement the 3D scene and Earth placeholder.** Build the actual Three.js scene, camera, renderer, resize handling, basic lighting and an Earth sphere. Use a simple generated or replaceable texture so the scene is runnable without depending on an external asset. Separate scene setup from simulation state ingestion.
 
 **Detailed execution:** Implement camera orbit, zoom and reset controls; prevent resize events from leaking render loops or creating duplicate canvases. Use the renderer only to draw state—no hidden simulation clock or orbital equations in React components. Keep visual assets replaceable through an asset interface and place material/texture settings in named configuration rather than scattering constants through components.
 
 **Completion evidence:** Earth renders in a clean browser start, camera controls work, resizing is stable, the render loop is cleaned up on unmount and a basic frontend test/build succeeds.
+
+**Status: COMPLETE** — Earth renders with schematic texture, OrbitControls (orbit/zoom/reset), ResizeObserver-based sizing, single render loop with proper cleanup, VSCode dark theme UI, loading screen with rotating Earth, Electron desktop app with native menu.
 
 ## Day 4: 14/10/2026
 **Task: Render virtual satellites and their orbital paths.** Add reusable satellite marker/model components and orbit-path rendering. Start with four illustrative satellites loaded from scenario configuration. Display a stable satellite ID and distinguish satellites visually without relying on color alone.

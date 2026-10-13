@@ -64,7 +64,7 @@
         }
       ],
       "artifactName": "ConstellaLab-Portable-${version}.exe",
-      "signAndEditExecutable": true
+      "signAndEditExecutable": false
     },
     "portable": {
       "artifactName": "ConstellaLab-${version}-portable.exe"

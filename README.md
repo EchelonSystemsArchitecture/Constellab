@@ -1,4 +1,4 @@
-<p align="center"><img src="assets/icons/icon.png" alt="ConstellaLab logo" width="160"></p>
+<p align="center"><img src="assets/icons/icon.png" alt="ConstellaLab logo" width="120"></p>
 
 # ConstellaLab — Day 3: Offline Earth Viewport
 
@@ -9,127 +9,104 @@ Software-only crash-test lab for autonomous satellite swarms — a Three.js Eart
 | Action | Command |
 |---|---|
 | Run Python core status | `npm run status` |
-| Print the epoch snapshot of the demo scenario | `npm run snapshot` |
-| Regenerate TypeScript contract types from the schema | `npm run gen:contract` |
-| Start dev mode (core + Vite) | `npm run dev` |
+| Print the epoch snapshot | `npm run snapshot` |
+| Regenerate TS contract types | `npm run gen:contract` |
+| Start dev mode (core + Vite + Electron) | `npm run dev` |
 | Build frontend | `npm run build` |
 | Fetch embedded Python | `npm run fetch-python` |
 | Build .exe (portable) | `npm run dist:win` |
-| Regenerate app icons from the logo | `npm run icon` |
+| Regenerate app icons | `npm run icon` |
 
 ## .exe Application
 
-**`dist-electron\ConstellaLab-<version>-portable.exe`** — portable Windows executable (also `dist-electron\win-unpacked\ConstellaLab.exe`).
+**`dist-electron\ConstellaLab-<version>-portable.exe`** — portable Windows executable.
 
-- Native desktop app (no browser, no internet required after install)
-- Embedded Python 3.14.1 service (autofetched via `npm run fetch-python`)
-- Double-click to launch; opens the ConstellaLab orbital test lab window
-- Earth texture and all UI assets are generated locally or bundled. Runtime needs no internet; localhost is only the on-machine core bridge.
-- `npm run dist:win` verifies the official icon inside **both** the portable launcher and inner application executable. Linux cross-builds require Wine for Windows executable resource editing; Windows builds need no Wine. The app is unsigned unless you configure a signing certificate.
+- Native desktop app (no browser, no internet required after build)
+- Embedded Python 3.14 service (autofetched via `npm run fetch-python`)
+- VSCode dark theme UI with system font
+- Loading screen with rotating Earth
+- `npm run dist:win` verifies icons in both portable launcher and inner exe
 
 ## Day 3: the Earth viewport
 
-- A lit Earth sphere with a generated, deliberately **schematic** texture (not a geographic dataset).
-- Drag or touch-drag to orbit; wheel/pinch or the **+ / −** buttons to zoom. **Reset view** restores the initial camera and clears camera damping.
-- Earth is static. Camera animation never changes `clock.simulation_time_s`; simulation time remains core-owned.
-- Earth renders even if the core is unreachable. The telemetry panel reports loading/validation/network errors separately.
-- Valid snapshots still appear in the telemetry panel; expand **Core state** to inspect the Day 2 satellite table. Satellite meshes and orbit paths are **Day 4**, propagation is **Day 5**.
-- The scene follows the viewport's size via `ResizeObserver`, clamps device pixel ratio, and owns one render loop. Unmount cancels that loop, disconnects resize observation, releases controls/GPU resources, and removes its canvas (including React StrictMode remounts).
-- If WebGL is unavailable, an explanatory error replaces the viewport; core telemetry remains usable.
+- Lit Earth sphere with generated schematic texture (no external assets)
+- Drag to orbit; wheel/pinch or +/− buttons to zoom; Reset view restores camera
+- Earth is static — camera animation never changes simulation time
+- Renders even if core is unreachable; telemetry panel reports errors separately
+- Valid snapshots appear in telemetry panel; expand Core state for satellite table
+- Satellite meshes and orbit paths are Day 4; propagation is Day 5
+- Scene follows viewport size via ResizeObserver, clamps DPR, owns one render loop
+- Unmount cancels loop, disconnects resize, releases GPU resources
 
 ### Scene components
 
 | Component | Responsibility |
 |---|---|
-| `frontend/src/scene/SceneShell.tsx` | React host, accessible camera buttons, snapshot telemetry; mount/unmount and a separate snapshot ingestion effect |
-| `EarthScene.ts` | Three.js renderer, perspective camera and `OrbitControls`; `setSnapshot()` is separate from scene construction |
-| `EarthWorld.ts` | Earth geometry/material, lighting and idempotent disposal |
-| `config.ts` | Named camera, geometry, lighting, texture and renderer settings (visual Earth radius = 1 scene unit, north = +Z) |
-| `assets.ts` | `SceneAssets.createEarthTexture()` replacement interface; default canvas-generated texture, no URL or image download |
+| `frontend/src/scene/SceneShell.tsx` | React host, camera buttons, snapshot telemetry |
+| `EarthScene.ts` | Three.js renderer, camera, OrbitControls |
+| `EarthWorld.ts` | Earth geometry/material, lighting, disposal |
+| `config.ts` | Named camera, geometry, lighting, texture settings |
+| `assets.ts` | Canvas-generated Earth texture, no URL download |
 | `camera.ts` | Camera reset and bounded zoom helpers |
-| `lifecycle.ts` | Single animation loop and resize subscription, with an injectable runtime for automated tests |
-
-`npm run test:scene` covers resize bursts, zero-size hosts, late callbacks after disposal, StrictMode-style remounts, camera limits/reset, asset replacement and GPU resource disposal. Browser testing is still needed to verify actual WebGL rendering and pointer interactions.
+| `lifecycle.ts` | Single animation loop, injectable runtime for tests |
 
 ## Day 2: the contract
 
-`core/constellab_core/data/simulation_contract.schema.json` is the **single versioned source of truth**
-(`x-schema-version`, currently `1.0.0`). Everything else is derived from or tested against it:
+`core/constellab_core/data/simulation_contract.schema.json` is the single versioned source of truth (v1.0.0).
 
 | Layer | Artefact |
 |---|---|
-| Python typed models | `core/constellab_core/contract.py` (`SimulationConfig`, `SimulationSnapshot`, `SatelliteState`, `OrbitElements`, `SimulationClock`, `VersionMetadata`; `EntityId` as a validated string) |
-| Python validation | `core/constellab_core/validation.py` — dependency-free JSON-Schema-subset validator; refuses schema keywords it does not understand |
-| TypeScript types + embedded schema | `frontend/src/contract/generated.ts` — generated by `npm run gen:contract`, checked for drift in `npm test` |
-| TypeScript validation | `frontend/src/contract/validate.ts` + `parseSnapshot()` / `parseConfig()` in `frontend/src/contract/index.ts` |
-| Fixtures | `core/constellab_core/data/scenario_empty.json`, `scenario_four_satellites.json`, `core/tests/fixtures/malformed_*.json` (shared by both test suites) |
+| Python typed models | `core/constellab_core/contract.py` |
+| Python validation | `core/constellab_core/validation.py` — JSON-Schema-subset validator |
+| TypeScript types | `frontend/src/contract/generated.ts` — generated by `npm run gen:contract` |
+| TypeScript validation | `frontend/src/contract/validate.ts` + `parseSnapshot()` |
+| Fixtures | `scenario_empty.json`, `scenario_four_satellites.json`, `malformed_*.json` |
 
-Contract rules (details live in the schema descriptions):
-
-- **Units**: km, km/s, degrees, seconds. **Frame**: non-rotating Earth-centred inertial, axes fixed at the scenario epoch.
-- **Time**: `clock.epoch_utc` is ISO 8601 UTC (`Z` mandatory); `clock.simulation_time_s` is elapsed simulated seconds since the epoch and is owned by the core.
-- **Versioning**: every config/snapshot carries `schema_version`; consumers accept the same major and a minor no newer than their own, otherwise the payload is rejected.
-- **Identity**: every entity has a stable `id` (`^[a-z0-9][a-z0-9-]{0,62}$`); duplicates are rejected; array position is never an identity.
-- **Strictness**: unknown fields are rejected with their JSON path; optional fields are omitted, never `null`.
-- **Layers**: `SimulationConfig` (what to simulate) ≠ `SimulationSnapshot` (runtime state at one instant) ≠ rendered objects (frontend, Day 3+). The frontend only renders snapshots from the core; it never computes orbital state.
-
-### Core HTTP API (`http://127.0.0.1:8765`, CORS enabled)
+### Core HTTP API (`http://127.0.0.1:8765`)
 
 | Endpoint | Purpose |
 |---|---|
-| `GET /api/status`, `GET /api/health` | service metadata incl. `schema_version` |
-| `GET /api/contract` | the JSON schema |
-| `GET /api/scenario` | the loaded `SimulationConfig` |
-| `GET /api/snapshot` | the `SimulationSnapshot` at the scenario epoch |
-| `POST /api/config/validate` | validate a config → `{valid, errors[]}` |
-| `POST /api/snapshot` | validate a config and return its epoch snapshot (`422` with `errors[]` on failure) |
+| `GET /api/status`, `GET /api/health` | service metadata |
+| `GET /api/contract` | JSON schema |
+| `GET /api/scenario` | loaded SimulationConfig |
+| `GET /api/snapshot` | SimulationSnapshot at epoch |
+| `POST /api/config/validate` | validate config |
+| `POST /api/snapshot` | validate config and return epoch snapshot |
 
-CLI: `python -m constellab_core {status|validate|snapshot|serve} [--scenario empty|visual-orbit-demo|<file>]`
-(exit code 2 and a JSON error list for invalid configs).
-
-## Folder Structure (minimal)
+## Folder Structure
 
 ```
 constellab/
   package.json     npm + electron-builder config
-  .gitignore       standard ignores
   vite.config.ts   Vite + React config
   pyproject.toml   Python package metadata
-  assets/icons/    official logo (icon.png) + generated icon.ico
+  assets/icons/    logo + generated icon.ico
   core/            Python constellab_core package
   frontend/        Vite + React + TS source
-  electron/        Electron main + scripts
-  scripts/         dev/test/fetch-python/gen_contract/make_icon helpers (python or python3)
-  dist-electron/   build output → ConstellaLab.exe (gitignored)
-  node_modules/    (gitignored)
+  electron/        Electron main + preload
+  scripts/         dev/test/helpers
+  dist-electron/   build output (gitignored)
 ```
 
 ## Development Commands
 
 ```bash
-npm run test      # Python core, contract drift, tsc, TS contract + scene lifecycle tests, Vite build
+npm run test      # Python core, contract drift, tsc, TS tests, Vite build
 npm run test:core # Python tests only
-npm run test:contract  # TypeScript contract tests only
-npm run test:scene     # Earth assets, camera and viewport lifecycle tests
-npm run gen:contract   # Regenerate frontend/src/contract/generated.ts from the schema
+npm run test:contract  # TypeScript contract tests
+npm run test:scene     # Scene lifecycle tests
 npm run typecheck # tsc --noEmit
-npm run dev       # Start core + Vite dev server
+npm run dev       # Start core + Vite + Electron
 npm run status    # Print core status as JSON
-npm run snapshot  # Print the demo scenario's epoch snapshot
+npm run snapshot  # Print demo scenario's epoch snapshot
 npm run fetch-python  # Download embedded Python for .exe
-npm run dist:win  # Build portable .exe application
-npm run icon      # Regenerate icon.ico + favicon from assets/icons/icon.png (needs Pillow)
+npm run dist:win  # Build portable .exe
+npm run icon      # Regenerate icons (needs Pillow)
 ```
-
-## Branding
-
-The single official icon is `assets/icons/icon.png`. Everything else is derived from it with `npm run icon`:
-the Windows `.exe`/taskbar icon (`assets/icons/icon.ico`, via electron-builder and the Electron window) and the
-frontend favicon (`frontend/public/favicon.png`). Never hand-edit the derived files — replace `icon.png` and rerun.
 
 ## Progress
 
 - **Day 1** ✅ runnable baseline, portable .exe, minimal folder structure
-- **Day 2** ✅ versioned contract, generated TS types, round-trip + malformed-fixture tests in both languages, core-owned snapshots consumed by the renderer
-- **Day 3** — Three.js Earth, offline asset interface, camera controls, stable resize and lifecycle cleanup
-- **Day 4 / 5** — satellite markers and paths / deterministic orbital motion (not implemented yet)
+- **Day 2** ✅ versioned contract, generated TS types, round-trip tests
+- **Day 3** ✅ Three.js Earth, offline texture, camera controls, stable lifecycle
+- **Day 4 / 5** — satellite markers and paths / deterministic orbital motion

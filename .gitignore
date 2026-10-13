@@ -44,3 +44,8 @@ data/raw/
 *.ckpt
 *.pt
 *.npz
+
+# personal docs / plans
+docs/
+*.md
+!README.md

@@ -1,13 +1,8 @@
+import { useEffect, useRef, useState } from "react";
 import type { SnapshotState } from "../App";
 import type { SatelliteState } from "../contract";
+import { EarthScene } from "./EarthScene";
 
-/**
- * Day 2 scene shell: displays the canonical snapshot received from the core.
- *
- * Nothing here computes orbital state. The table is the renderer's honest view
- * of the contract until the Three.js scene replaces it on Day 3; the rendered
- * objects built then will be derived from these same SatelliteState records.
- */
 const km = (v: number) => v.toFixed(1);
 const kms = (v: number) => v.toFixed(3);
 
@@ -25,11 +20,51 @@ function SatelliteRow({ sat }: { sat: SatelliteState }) {
 }
 
 export function SceneShell({ snapshot }: { snapshot: SnapshotState }) {
+  const viewport = useRef<HTMLDivElement>(null);
+  const scene = useRef<EarthScene | null>(null);
+  const [sceneError, setSceneError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!viewport.current) return;
+    try {
+      scene.current = new EarthScene(viewport.current);
+      setSceneError(null);
+    } catch (err) {
+      setSceneError(err instanceof Error ? err.message : String(err));
+    }
+    return () => {
+      scene.current?.dispose();
+      scene.current = null;
+    };
+  }, []);
+
+  useEffect(() => {
+    scene.current?.setSnapshot(snapshot.kind === "ready" ? snapshot.snapshot : null);
+  }, [snapshot]);
+
   return (
-    <div className="scene-shell" data-testid="scene-shell">
-      <div className="scene-shell__placeholder">
-        <div className="scene-shell__title">Constellab Scene</div>
-        <div className="scene-shell__subtitle">Orbital viewport — 3D rendering starts Day 3</div>
+    <section className="scene-shell" data-testid="scene-shell" aria-label="Orbital viewport">
+      <div className="scene-shell__viewport" ref={viewport} data-testid="earth-viewport" />
+      <div className="scene-shell__toolbar">
+        <div>
+          <div className="scene-shell__title">Earth / orbital viewport</div>
+          <div className="scene-shell__subtitle">Offline schematic texture · fixed Earth · ECI reference</div>
+        </div>
+        <div className="scene-shell__controls" role="group" aria-label="Camera controls">
+          <button disabled={!!sceneError} onClick={() => scene.current?.zoom("in")} aria-label="Zoom in">+</button>
+          <button disabled={!!sceneError} onClick={() => scene.current?.zoom("out")} aria-label="Zoom out">−</button>
+          <button disabled={!!sceneError} onClick={() => scene.current?.reset()}>Reset view</button>
+        </div>
+      </div>
+      {sceneError && (
+        <div className="scene-shell__unavailable" role="alert">
+          <h2>3D viewport unavailable</h2>
+          <p>WebGL is required. Enable hardware acceleration or use a WebGL-capable device.</p>
+          <p className="mono">{sceneError}</p>
+        </div>
+      )}
+      <div className="scene-shell__telemetry">
+        <div className="scene-shell__hint">Drag to orbit · scroll / pinch to zoom · satellites &amp; paths arrive Day 4</div>
         {snapshot.kind === "loading" && <div className="scene-shell__note">waiting for snapshot…</div>}
         {snapshot.kind === "rejected" && (
           <div className="scene-shell__error" data-testid="snapshot-error">
@@ -47,6 +82,9 @@ export function SceneShell({ snapshot }: { snapshot: SnapshotState }) {
               {`scenario ${snapshot.snapshot.scenario_id} · epoch ${snapshot.snapshot.clock.epoch_utc} · t = ${snapshot.snapshot.clock.simulation_time_s.toFixed(1)} s · ×${snapshot.snapshot.clock.time_scale} · ${snapshot.snapshot.clock.paused ? "paused" : "running"} · ${snapshot.snapshot.satellites.length} satellites`}
             </div>
             {snapshot.snapshot.satellites.length > 0 && (
+              <details className="snapshot__details">
+                <summary>Core state / {snapshot.snapshot.satellites.length} satellites (not yet rendered)</summary>
+                <div className="snapshot__scroll">
               <table className="snapshot__table">
                 <thead>
                   <tr>
@@ -62,10 +100,12 @@ export function SceneShell({ snapshot }: { snapshot: SnapshotState }) {
                   ))}
                 </tbody>
               </table>
+                </div>
+              </details>
             )}
           </div>
         )}
       </div>
-    </div>
+    </section>
   );
 }

@@ -1,8 +1,8 @@
 <p align="center"><img src="assets/icons/icon.png" alt="ConstellaLab logo" width="160"></p>
 
-# ConstellaLab — Day 2: Simulation/Visualization Contract
+# ConstellaLab — Day 3: Offline Earth Viewport
 
-**One-sentence:** Software-only crash-test lab for autonomous satellite swarms — Day 2: one versioned simulation/visualization contract shared by the Python core and the TypeScript renderer.
+Software-only crash-test lab for autonomous satellite swarms — a Three.js Earth viewport built on the versioned Python/TypeScript simulation contract.
 
 ## Quick Start
 
@@ -24,6 +24,32 @@
 - Native desktop app (no browser, no internet required after install)
 - Embedded Python 3.14.1 service (autofetched via `npm run fetch-python`)
 - Double-click to launch; opens the ConstellaLab orbital test lab window
+- Earth texture and all UI assets are generated locally or bundled. Runtime needs no internet; localhost is only the on-machine core bridge.
+- `npm run dist:win` verifies the official icon inside **both** the portable launcher and inner application executable. Linux cross-builds require Wine for Windows executable resource editing; Windows builds need no Wine. The app is unsigned unless you configure a signing certificate.
+
+## Day 3: the Earth viewport
+
+- A lit Earth sphere with a generated, deliberately **schematic** texture (not a geographic dataset).
+- Drag or touch-drag to orbit; wheel/pinch or the **+ / −** buttons to zoom. **Reset view** restores the initial camera and clears camera damping.
+- Earth is static. Camera animation never changes `clock.simulation_time_s`; simulation time remains core-owned.
+- Earth renders even if the core is unreachable. The telemetry panel reports loading/validation/network errors separately.
+- Valid snapshots still appear in the telemetry panel; expand **Core state** to inspect the Day 2 satellite table. Satellite meshes and orbit paths are **Day 4**, propagation is **Day 5**.
+- The scene follows the viewport's size via `ResizeObserver`, clamps device pixel ratio, and owns one render loop. Unmount cancels that loop, disconnects resize observation, releases controls/GPU resources, and removes its canvas (including React StrictMode remounts).
+- If WebGL is unavailable, an explanatory error replaces the viewport; core telemetry remains usable.
+
+### Scene components
+
+| Component | Responsibility |
+|---|---|
+| `frontend/src/scene/SceneShell.tsx` | React host, accessible camera buttons, snapshot telemetry; mount/unmount and a separate snapshot ingestion effect |
+| `EarthScene.ts` | Three.js renderer, perspective camera and `OrbitControls`; `setSnapshot()` is separate from scene construction |
+| `EarthWorld.ts` | Earth geometry/material, lighting and idempotent disposal |
+| `config.ts` | Named camera, geometry, lighting, texture and renderer settings (visual Earth radius = 1 scene unit, north = +Z) |
+| `assets.ts` | `SceneAssets.createEarthTexture()` replacement interface; default canvas-generated texture, no URL or image download |
+| `camera.ts` | Camera reset and bounded zoom helpers |
+| `lifecycle.ts` | Single animation loop and resize subscription, with an injectable runtime for automated tests |
+
+`npm run test:scene` covers resize bursts, zero-size hosts, late callbacks after disposal, StrictMode-style remounts, camera limits/reset, asset replacement and GPU resource disposal. Browser testing is still needed to verify actual WebGL rendering and pointer interactions.
 
 ## Day 2: the contract
 
@@ -81,9 +107,10 @@ constellab/
 ## Development Commands
 
 ```bash
-npm run test      # Python core tests, generated-contract drift check, tsc, TS contract tests, Vite build
+npm run test      # Python core, contract drift, tsc, TS contract + scene lifecycle tests, Vite build
 npm run test:core # Python tests only
 npm run test:contract  # TypeScript contract tests only
+npm run test:scene     # Earth assets, camera and viewport lifecycle tests
 npm run gen:contract   # Regenerate frontend/src/contract/generated.ts from the schema
 npm run typecheck # tsc --noEmit
 npm run dev       # Start core + Vite dev server
@@ -104,4 +131,5 @@ frontend favicon (`frontend/public/favicon.png`). Never hand-edit the derived fi
 
 - **Day 1** ✅ runnable baseline, portable .exe, minimal folder structure
 - **Day 2** ✅ versioned contract, generated TS types, round-trip + malformed-fixture tests in both languages, core-owned snapshots consumed by the renderer
-- **Day 3** ⏭ Three.js orbital scene rendering `SimulationSnapshot`s
+- **Day 3** — Three.js Earth, offline asset interface, camera controls, stable resize and lifecycle cleanup
+- **Day 4 / 5** — satellite markers and paths / deterministic orbital motion (not implemented yet)

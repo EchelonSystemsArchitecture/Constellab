@@ -1,0 +1,41 @@
+export const SCENE_CONFIG = {
+  background: "#080d18",
+  earth: {
+    radius: 1,
+    widthSegments: 64,
+    heightSegments: 32,
+    roughness: 0.85,
+    metalness: 0,
+  },
+  texture: {
+    width: 1024,
+    height: 512,
+    ocean: "#123c64",
+    land: "#588e79",
+    ice: "#d2e3e5",
+    grid: "rgba(189, 215, 229, 0.12)",
+    gridSpacingDeg: 30,
+  },
+  camera: {
+    fovDeg: 45,
+    near: 0.01,
+    far: 100,
+    position: [3.2, 1.7, 3.2] as const,
+    target: [0, 0, 0] as const,
+    minDistance: 1.4,
+    maxDistance: 12,
+    zoomFactor: 1.25,
+    dampingFactor: 0.08,
+  },
+  lighting: {
+    ambientColor: "#c8dfff",
+    ambientIntensity: 1.2,
+    sunColor: "#fff4df",
+    sunIntensity: 3,
+    sunPosition: [4, 3, 5] as const,
+  },
+  renderer: {
+    maxPixelRatio: 2,
+    exposure: 1,
+  },
+} as const;

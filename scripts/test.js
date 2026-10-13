@@ -3,7 +3,7 @@
  *   1. Python core tests (contract round-trips, fixtures, HTTP bridge, CLI)
  *   2. Generated TypeScript contract is in sync with the JSON Schema
  *   3. Frontend type-check
- *   4. TypeScript contract tests against the shared fixtures
+ *   4. TypeScript contract and viewport lifecycle tests
  *   5. Frontend production build
  */
 const { spawnSync } = require("child_process");
@@ -21,6 +21,7 @@ const steps = [
   ["Frontend type-check", process.execPath, [tsc, "-p", "frontend", "--noEmit"]],
   ["Compile contract tests", process.execPath, [tsc, "-p", path.join("frontend", "tsconfig.test.json")]],
   ["TypeScript contract tests", process.execPath, ["--test", path.join("frontend", ".test-out", "contract", "__tests__", "contract.test.js")]],
+  ["Viewport lifecycle tests", process.execPath, ["--test", path.join("frontend", ".test-out", "scene", "__tests__", "scene.test.js")]],
   ["Frontend build", process.execPath, [vite, "build"]],
 ];
 

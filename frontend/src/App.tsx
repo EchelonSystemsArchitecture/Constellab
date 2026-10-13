@@ -78,8 +78,8 @@ export default function App() {
         <SceneShell snapshot={snapshot} />
       </main>
       <footer className="app__footer">
-        Day 2 — renderer consumes core snapshots (contract v{SCHEMA_VERSION}); 3D scene starts Day 3; no
-        inter-satellite communication yet
+        Day 3 — offline Earth viewport · core-owned snapshots (contract v{SCHEMA_VERSION}) · no
+        orbital motion or inter-satellite communication yet
       </footer>
     </div>
   );

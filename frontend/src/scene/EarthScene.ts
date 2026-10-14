@@ -1,5 +1,5 @@
 import {
-  ACESFilmicToneMapping, PerspectiveCamera, Vector3, WebGLRenderer,
+  ACESFilmicToneMapping, PerspectiveCamera, Vector3, WebGLRenderer, Scene, Line,
 } from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import type { SimulationSnapshot } from "../contract";
@@ -8,12 +8,16 @@ import { resetCamera, zoomCamera } from "./camera";
 import { SCENE_CONFIG } from "./config";
 import { createEarthWorld } from "./EarthWorld";
 import { BROWSER_RUNTIME, startViewport } from "./lifecycle";
+import { createSatelliteVisuals, getSatelliteColor } from "./orbit";
 
 export class EarthScene {
   private readonly renderer: WebGLRenderer;
   private readonly camera: PerspectiveCamera;
   private readonly controls: OrbitControls;
   private readonly stopViewport: () => void;
+  private readonly worldScene: Scene;
+  private readonly satelliteLines: Line[] = [];
+  private readonly satelliteMeshes: Map<string, { mesh: Line; index: number }> = new Map();
   private disposed = false;
 
   constructor(host: HTMLElement, assets: SceneAssets = OFFLINE_ASSETS) {
@@ -21,7 +25,7 @@ export class EarthScene {
     this.renderer = new WebGLRenderer({ antialias: true });
     this.renderer.toneMapping = ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = config.renderer.exposure;
-    this.renderer.domElement.setAttribute("aria-label", "3D Earth placeholder. Drag to orbit, scroll to zoom.");
+    this.renderer.domElement.setAttribute("aria-label", "3D Earth with satellite orbits. Drag to orbit, scroll to zoom.");
     this.renderer.domElement.setAttribute("role", "img");
     this.camera = new PerspectiveCamera(config.camera.fovDeg, 1, config.camera.near, config.camera.far);
     resetCamera(this.camera, new Vector3());
@@ -41,6 +45,7 @@ export class EarthScene {
       this.renderer.dispose();
       throw error;
     }
+    this.worldScene = world.scene;
     host.appendChild(this.renderer.domElement);
     this.stopViewport = startViewport(host, {
       resize: (width, height, pixelRatio) => {
@@ -50,9 +55,8 @@ export class EarthScene {
         this.renderer.setSize(width, height);
       },
       render: () => {
-        // Damping is camera-only; render frames never advance simulation time.
         this.controls.update();
-        this.renderer.render(world.scene, this.camera);
+        this.renderer.render(this.worldScene, this.camera);
       },
       dispose: () => {
         this.controls.dispose();
@@ -66,15 +70,63 @@ export class EarthScene {
 
   setSnapshot(snapshot: SimulationSnapshot | null) {
     if (this.disposed) return;
-    // Metadata only on Day 3; entity geometry is a separate Day 4 consumer.
     const canvas = this.renderer.domElement;
     if (snapshot) {
       canvas.dataset.scenarioId = snapshot.scenario_id;
       canvas.dataset.simulationTimeS = String(snapshot.clock.simulation_time_s);
+      this.updateSatellites(snapshot);
     } else {
       delete canvas.dataset.scenarioId;
       delete canvas.dataset.simulationTimeS;
+      this.clearSatellites();
     }
+  }
+
+  private updateSatellites(snapshot: SimulationSnapshot) {
+    const currentIds = new Set(snapshot.satellites.map(s => s.id));
+
+    for (const [id, { mesh }] of this.satelliteMeshes) {
+      if (!currentIds.has(id)) {
+        this.worldScene.remove(mesh);
+        this.satelliteLines[this.satelliteLines.findIndex(l => l === mesh)]?.geometry.dispose();
+        this.satelliteLines[this.satelliteLines.findIndex(l => l === mesh)]?.material.dispose();
+        this.satelliteLines.splice(this.satelliteLines.findIndex(l => l === mesh), 1);
+        this.satelliteMeshes.delete(id);
+      }
+    }
+
+    snapshot.satellites.forEach((sat, i) => {
+      const color = getSatelliteColor(i);
+      const existing = this.satelliteMeshes.get(sat.id);
+
+      if (existing) {
+        if ('position_eci_km' in sat) {
+          const pos = sat.position_eci_km;
+          existing.mesh.position.set(pos[0] / 6371, pos[1] / 6371, pos[2] / 6371);
+        }
+      } else {
+        const visuals = createSatelliteVisuals(sat, color);
+        this.worldScene.add(visuals.orbitLine);
+        this.worldScene.add(visuals.satelliteMesh);
+        this.satelliteLines.push(visuals.orbitLine);
+        this.satelliteMeshes.set(sat.id, { mesh: visuals.satelliteMesh, index: i });
+      }
+    });
+  }
+
+  private clearSatellites() {
+    for (const line of this.satelliteLines) {
+      this.worldScene.remove(line);
+      line.geometry.dispose();
+      line.material.dispose();
+    }
+    this.satelliteLines.length = 0;
+    for (const { mesh } of this.satelliteMeshes.values()) {
+      this.worldScene.remove(mesh);
+      mesh.geometry.dispose();
+      (mesh.material as any).dispose?.();
+    }
+    this.satelliteMeshes.clear();
   }
 
   zoom(direction: "in" | "out") {
@@ -98,6 +150,7 @@ export class EarthScene {
   dispose() {
     if (this.disposed) return;
     this.disposed = true;
+    this.clearSatellites();
     this.stopViewport();
   }
 }

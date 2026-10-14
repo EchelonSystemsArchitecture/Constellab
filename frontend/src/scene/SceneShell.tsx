@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import type { SnapshotState } from "../App";
 import type { SatelliteState } from "../contract";
 import { EarthScene } from "./EarthScene";
+import { createSatelliteVisuals, getSatelliteColor } from "./orbit";
 
 const km = (v: number) => v.toFixed(1);
 const kms = (v: number) => v.toFixed(3);
@@ -74,7 +75,7 @@ export function SceneShell({ snapshot }: { snapshot: SnapshotState }) {
         </div>
       )}
       <div className="scene-shell__telemetry">
-        <div className="scene-shell__hint">Drag to orbit · scroll / pinch to zoom · satellites &amp; paths arrive Day 4</div>
+        <div className="scene-shell__hint">Drag to orbit · scroll / pinch to zoom · satellites & paths arrive Day 4</div>
         {snapshot.kind === "loading" && (
           <div className="scene-shell__note">
             <span className="loading-screen__spinner" style={{ display: "inline-block", verticalAlign: "middle", marginRight: 8 }} />
@@ -98,7 +99,7 @@ export function SceneShell({ snapshot }: { snapshot: SnapshotState }) {
             </div>
             {snapshot.snapshot.satellites.length > 0 && (
               <details className="snapshot__details">
-                <summary>Core state / {snapshot.snapshot.satellites.length} satellites (not yet rendered)</summary>
+                <summary>Core state / {snapshot.snapshot.satellites.length} satellites</summary>
                 <div className="snapshot__scroll">
                   <table className="snapshot__table">
                     <thead>
@@ -110,8 +111,8 @@ export function SceneShell({ snapshot }: { snapshot: SnapshotState }) {
                       </tr>
                     </thead>
                     <tbody>
-                      {snapshot.snapshot.satellites.map((sat) => (
-                        <SatelliteRow key={sat.id} sat={sat} />
+                      {snapshot.snapshot.satellites.map((sat, i) => (
+                        <SatelliteRow key={sat.id} sat={sat} style={{ color: `#${getSatelliteColor(i).toString(16).padStart(6, '0')}` }} />
                       ))}
                     </tbody>
                   </table>

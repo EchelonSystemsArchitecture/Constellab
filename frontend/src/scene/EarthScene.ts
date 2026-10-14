@@ -1,5 +1,5 @@
 import {
-  ACESFilmicToneMapping, PerspectiveCamera, Vector3, WebGLRenderer, Scene, Line,
+  ACESFilmicToneMapping, PerspectiveCamera, Vector3, WebGLRenderer, Scene, Line, Mesh,
 } from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import type { SimulationSnapshot } from "../contract";
@@ -17,7 +17,7 @@ export class EarthScene {
   private readonly stopViewport: () => void;
   private readonly worldScene: Scene;
   private readonly satelliteLines: Line[] = [];
-  private readonly satelliteMeshes: Map<string, { mesh: Line; index: number }> = new Map();
+  private readonly satelliteMeshes: Map<string, { mesh: Mesh; index: number }> = new Map();
   private disposed = false;
 
   constructor(host: HTMLElement, assets: SceneAssets = OFFLINE_ASSETS) {
@@ -88,9 +88,13 @@ export class EarthScene {
     for (const [id, { mesh }] of this.satelliteMeshes) {
       if (!currentIds.has(id)) {
         this.worldScene.remove(mesh);
-        this.satelliteLines[this.satelliteLines.findIndex(l => l === mesh)]?.geometry.dispose();
-        this.satelliteLines[this.satelliteLines.findIndex(l => l === mesh)]?.material.dispose();
-        this.satelliteLines.splice(this.satelliteLines.findIndex(l => l === mesh), 1);
+        const lineIdx = this.satelliteLines.findIndex(l => (l.userData as any).meshId === id);
+        if (lineIdx >= 0) {
+          const line = this.satelliteLines[lineIdx];
+          line.geometry.dispose();
+          (line.material as any).dispose?.();
+          this.satelliteLines.splice(lineIdx, 1);
+        }
         this.satelliteMeshes.delete(id);
       }
     }
@@ -106,6 +110,7 @@ export class EarthScene {
         }
       } else {
         const visuals = createSatelliteVisuals(sat, color);
+        (visuals.orbitLine.userData as any).meshId = sat.id;
         this.worldScene.add(visuals.orbitLine);
         this.worldScene.add(visuals.satelliteMesh);
         this.satelliteLines.push(visuals.orbitLine);
@@ -118,7 +123,7 @@ export class EarthScene {
     for (const line of this.satelliteLines) {
       this.worldScene.remove(line);
       line.geometry.dispose();
-      line.material.dispose();
+      (line.material as any).dispose?.();
     }
     this.satelliteLines.length = 0;
     for (const { mesh } of this.satelliteMeshes.values()) {

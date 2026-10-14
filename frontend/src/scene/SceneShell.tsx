@@ -2,16 +2,17 @@ import { useEffect, useRef, useState } from "react";
 import type { SnapshotState } from "../App";
 import type { SatelliteState } from "../contract";
 import { EarthScene } from "./EarthScene";
-import { createSatelliteVisuals, getSatelliteColor } from "./orbit";
+import { getSatelliteColor } from "./orbit";
 
 const km = (v: number) => v.toFixed(1);
 const kms = (v: number) => v.toFixed(3);
 
-function SatelliteRow({ sat }: { sat: SatelliteState }) {
+function SatelliteRow({ sat, color }: { sat: SatelliteState; color: number }) {
   const [x, y, z] = sat.position_eci_km;
   const [vx, vy, vz] = sat.velocity_eci_km_s;
+  const colorHex = `#${color.toString(16).padStart(6, '0')}`;
   return (
-    <tr data-satellite-id={sat.id}>
+    <tr data-satellite-id={sat.id} style={{ color: colorHex }}>
       <td className="mono">{sat.id}</td>
       <td className="mono">{`${km(x)}, ${km(y)}, ${km(z)}`}</td>
       <td className="mono">{`${kms(vx)}, ${kms(vy)}, ${kms(vz)}`}</td>
@@ -112,7 +113,7 @@ export function SceneShell({ snapshot }: { snapshot: SnapshotState }) {
                     </thead>
                     <tbody>
                       {snapshot.snapshot.satellites.map((sat, i) => (
-                        <SatelliteRow key={sat.id} sat={sat} style={{ color: `#${getSatelliteColor(i).toString(16).padStart(6, '0')}` }} />
+                        <SatelliteRow key={sat.id} sat={sat} color={getSatelliteColor(i)} />
                       ))}
                     </tbody>
                   </table>

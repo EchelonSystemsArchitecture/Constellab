@@ -10,7 +10,7 @@ const EARTH_RADIUS_KM = 6371;
 const VISUAL_SCALE = 1 / EARTH_RADIUS_KM;
 
 export function createOrbitGeometry(orbit: OrbitElements): BufferGeometry {
-  const { semi_major_axis_km, eccentricity, inclination_deg, raan_deg, argument_of_perigee_deg, true_anomaly_deg } = orbit;
+  const { semi_major_axis_km, eccentricity, inclination_deg, raan_deg, argument_of_perigee_deg } = orbit;
 
   const segments = 128;
   const positions = new Float32Array((segments + 1) * 3);
@@ -21,7 +21,6 @@ export function createOrbitGeometry(orbit: OrbitElements): BufferGeometry {
   const inc = inclination_deg * Math.PI / 180;
   const raan = raan_deg * Math.PI / 180;
   const argPe = argument_of_perigee_deg * Math.PI / 180;
-  const trueAnomaly = true_anomaly_deg * Math.PI / 180;
 
   const cosInc = Math.cos(inc);
   const sinInc = Math.sin(inc);
@@ -38,20 +37,31 @@ export function createOrbitGeometry(orbit: OrbitElements): BufferGeometry {
     const cosTheta = Math.cos(theta);
     const sinTheta = Math.sin(theta);
 
-    const xOrbit = r * cosTheta;
-    const yOrbit = r * sinTheta * cosInc;
-    const zOrbit = r * sinTheta * sinInc;
+    // Position in perifocal frame
+    const x_pf = r * cosTheta;
+    const y_pf = r * sinTheta;
+    const z_pf = 0;
 
-    const cosArgPeTheta = Math.cos(theta + argPe);
-    const sinArgPeTheta = Math.sin(theta + argPe);
+    // Rotate to ECI: R3(raan) * R1(inc) * R3(argPe)
+    // First rotate by argPe around Z
+    const x1 = x_pf * cosArgPe - y_pf * sinArgPe;
+    const y1 = x_pf * sinArgPe + y_pf * cosArgPe;
+    const z1 = z_pf;
 
-    const x = xOrbit * cosRaan - yOrbit * sinRaan;
-    const y = xOrbit * sinRaan + yOrbit * cosRaan;
-    const z = zOrbit;
+    // Then rotate by inc around X
+    const x2 = x1;
+    const y2 = y1 * cosInc - z1 * sinInc;
+    const z2 = y1 * sinInc + z1 * cosInc;
 
-    positions[i * 3] = x;
-    positions[i * 3 + 1] = z;
-    positions[i * 3 + 2] = -y;
+    // Then rotate by raan around Z
+    const x3 = x2 * cosRaan - y2 * sinRaan;
+    const y3 = x2 * sinRaan + y2 * cosRaan;
+    const z3 = z2;
+
+    // Three.js uses Y-up, ECI uses Z-up for north
+    positions[i * 3] = x3;
+    positions[i * 3 + 1] = z3;
+    positions[i * 3 + 2] = -y3;
   }
 
   const geometry = new BufferGeometry();
@@ -90,15 +100,25 @@ export function satellitePositionFromOrbit(orbit: OrbitElements, trueAnomalyDeg:
   const cosTheta = Math.cos(trueAnomaly);
   const sinTheta = Math.sin(trueAnomaly);
 
-  const xOrbit = r * cosTheta;
-  const yOrbit = r * sinTheta * cosInc;
-  const zOrbit = r * sinTheta * sinInc;
+  // Position in perifocal frame
+  const x_pf = r * cosTheta;
+  const y_pf = r * sinTheta;
+  const z_pf = 0;
 
-  const x = xOrbit * cosRaan - yOrbit * sinRaan;
-  const y = xOrbit * sinRaan + yOrbit * cosRaan;
-  const z = zOrbit;
+  // Rotate to ECI: R3(raan) * R1(inc) * R3(argPe)
+  const x1 = x_pf * cosArgPe - y_pf * sinArgPe;
+  const y1 = x_pf * sinArgPe + y_pf * cosArgPe;
+  const z1 = z_pf;
 
-  return new Vector3(x, z, -y);
+  const x2 = x1;
+  const y2 = y1 * cosInc - z1 * sinInc;
+  const z2 = y1 * sinInc + z1 * cosInc;
+
+  const x3 = x2 * cosRaan - y2 * sinRaan;
+  const y3 = x2 * sinRaan + y2 * cosRaan;
+  const z3 = z2;
+
+  return new Vector3(x3, z3, -y3);
 }
 
 export function createSatelliteVisuals(sat: SatelliteState | SatelliteConfig, color: number): SatelliteVisuals {
@@ -121,8 +141,7 @@ export function createSatelliteVisuals(sat: SatelliteState | SatelliteConfig, co
     const pos = sat.position_eci_km;
     satelliteMesh.position.set(pos[0] * VISUAL_SCALE, pos[1] * VISUAL_SCALE, pos[2] * VISUAL_SCALE);
   } else {
-    const trueAnomaly = orbit.true_anomaly_deg;
-    const pos = satellitePositionFromOrbit(orbit, trueAnomaly);
+    const pos = satellitePositionFromOrbit(orbit, orbit.true_anomaly_deg);
     satelliteMesh.position.copy(pos);
   }
 

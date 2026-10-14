@@ -54,6 +54,26 @@ function startCore() {
   child.on("error", (err) => {
     console.error(`[ConstellaLab] Failed to spawn Python: ${err}`);
   });
+  child.on("exit", (code, signal) => {
+    console.log(`[ConstellaLab] core exited (code ${code}, signal ${signal})`);
+  });
+  return child;
+}
+
+/**
+ * Reuse a core that is already listening (e.g. one started by scripts/dev.js)
+ * instead of spawning a second copy that cannot bind the fixed port.
+ */
+async function ensureCore() {
+  try {
+    await waitForCore(CORE_URL, 1200);
+    console.log(`[ConstellaLab] Reusing core already listening on ${CORE_URL}`);
+    return null;
+  } catch {
+    console.log("[ConstellaLab] No local core yet; starting one");
+  }
+  const child = startCore();
+  await waitForCore(CORE_URL);
   return child;
 }
 
@@ -98,7 +118,8 @@ async function createWindow() {
     minWidth: 960,
     minHeight: 600,
     title: "ConstellaLab",
-    backgroundColor: "#1e1e1e",
+    // Matches the white startup splash so the first visible frame is not a dark flash.
+    backgroundColor: "#ffffff",
     icon: APP_ICON,
     frame: true,
     show: false,
@@ -136,10 +157,8 @@ async function createWindow() {
 
 app.whenReady().then(async () => {
   createMenu();
-  const core = startCore();
-  app.coreChild = core;
   try {
-    await waitForCore(CORE_URL);
+    app.coreChild = await ensureCore();
   } catch (err) {
     dialog.showErrorBox("ConstellaLab core failed to start", String(err));
     app.quit();

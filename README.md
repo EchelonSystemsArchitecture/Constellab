@@ -1,8 +1,8 @@
 <p align="center"><img src="assets/icons/icon.png" alt="ConstellaLab logo" width="120"></p>
 
-# ConstellaLab — Day 3: Offline Earth Viewport
+# ConstellaLab — Day 5: Deterministic Orbital Motion
 
-Software-only crash-test lab for autonomous satellite swarms — a Three.js Earth viewport built on the versioned Python/TypeScript simulation contract.
+Software-only crash-test lab for autonomous satellite swarms — a Three.js Earth viewport built on the versioned Python/TypeScript simulation contract. Four illustrative satellites orbit Earth from snapshots produced by the local Python core.
 
 ## Quick Start
 
@@ -17,6 +17,8 @@ Software-only crash-test lab for autonomous satellite swarms — a Three.js Eart
 | Build .exe (portable) | `npm run dist:win` |
 | Regenerate app icons | `npm run icon` |
 
+The app opens with a brief `constellab` splash, then the landing page, then the viewport.
+
 ## .exe Application
 
 **`dist-electron\ConstellaLab-<version>-portable.exe`** — portable Windows executable.
@@ -24,8 +26,25 @@ Software-only crash-test lab for autonomous satellite swarms — a Three.js Eart
 - Native desktop app (no browser, no internet required after build)
 - Embedded Python 3.14 service (autofetched via `npm run fetch-python`)
 - VSCode dark theme UI with system font
-- Loading screen with rotating Earth
+- Splash → landing page → viewport, all over a rotating Earth
 - `npm run dist:win` verifies icons in both portable launcher and inner exe
+
+## Day 4–5: satellites, orbit paths and motion
+
+- Satellite markers and their orbit paths are built from the snapshot `OrbitElements`
+- The core propagates position analytically (`F(t)`, two-body) at a fixed simulation-time step;
+  frame rate never changes simulation state
+- The renderer polls `/api/snapshot` and moves markers; it never integrates orbits itself
+- `state_from_elements_at_time(elements, 0)` equals the epoch `state_from_elements(elements)` and one
+  full period returns to the starting position
+- Orbit paths and satellite positions share one ECI → scene mapping (`scene/orbit.ts`), so markers
+  ride their own trajectory lines
+- The demo scenario runs at `time_scale` 300 (≈19 s per LEO revolution); controls arrive on Day 6
+
+### Brand assets
+
+Icons and the wordmark/symbol come from `assets/constellab_brand_assets/`. `assets/icons/icon.png`
+(2048 px) is the single source for the generated `.ico` and favicon via `npm run icon`.
 
 ## Day 3: the Earth viewport
 
@@ -109,4 +128,6 @@ npm run icon      # Regenerate icons (needs Pillow)
 - **Day 1** ✅ runnable baseline, portable .exe, minimal folder structure
 - **Day 2** ✅ versioned contract, generated TS types, round-trip tests
 - **Day 3** ✅ Three.js Earth, offline texture, camera controls, stable lifecycle
-- **Day 4 / 5** — satellite markers and paths / deterministic orbital motion
+- **Day 4** ✅ four configured satellites and their orbit paths, rendered from snapshot elements
+- **Day 5** ✅ analytic two-body propagation, running core clock, live snapshot polling in the viewport
+- **Day 6** — simulation time controls (pause / resume / reset / step / time scale)

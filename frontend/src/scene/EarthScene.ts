@@ -8,7 +8,7 @@ import { resetCamera, zoomCamera } from "./camera";
 import { SCENE_CONFIG } from "./config";
 import { createEarthWorld } from "./EarthWorld";
 import { BROWSER_RUNTIME, startViewport } from "./lifecycle";
-import { createSatelliteVisuals, getSatelliteColor } from "./orbit";
+import { createSatelliteVisuals, eciToScene, getSatelliteColor } from "./orbit";
 
 export class EarthScene {
   private readonly renderer: WebGLRenderer;
@@ -104,10 +104,7 @@ export class EarthScene {
       const existing = this.satelliteMeshes.get(sat.id);
 
       if (existing) {
-        if ('position_eci_km' in sat) {
-          const pos = sat.position_eci_km;
-          existing.mesh.position.set(pos[0] / 6371, pos[1] / 6371, pos[2] / 6371);
-        }
+        existing.mesh.position.copy(eciToScene(sat.position_eci_km));
       } else {
         const visuals = createSatelliteVisuals(sat, color);
         (visuals.orbitLine.userData as any).meshId = sat.id;

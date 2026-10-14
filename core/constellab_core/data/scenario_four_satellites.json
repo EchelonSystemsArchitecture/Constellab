@@ -4,7 +4,7 @@
   "name": "Visual orbit demo (four illustrative satellites)",
   "seed": 7,
   "epoch_utc": "2026-10-12T00:00:00Z",
-  "time_scale": 60,
+  "time_scale": 300,
   "satellites": [
     {
       "id": "sat-alpha",

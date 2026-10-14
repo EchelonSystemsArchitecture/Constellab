@@ -1,5 +1,10 @@
 export const SCENE_CONFIG = {
   background: "#080d18",
+  units: {
+    // Scene unit = Earth radius. The core speaks kilometres (ECI), so the
+    // renderer needs exactly one conversion; see scene/orbit.ts eciToScene().
+    kmPerSceneUnit: 6371,
+  },
   earth: {
     radius: 1,
     widthSegments: 64,

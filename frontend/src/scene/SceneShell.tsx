@@ -50,7 +50,9 @@ export function SceneShell({ snapshot }: { snapshot: SnapshotState }) {
       <div className="scene-shell__toolbar">
         <div>
           <div className="scene-shell__title">Earth / Orbital Viewport</div>
-          <div className="scene-shell__subtitle">Offline schematic texture · fixed Earth · ECI reference</div>
+          <div className="scene-shell__subtitle">
+            Offline schematic texture · ECI frame · illustrative two-body orbits
+          </div>
         </div>
         <div className="scene-shell__controls" role="group" aria-label="Camera controls">
           <button disabled={!!sceneError} onClick={() => scene.current?.zoom("in")} aria-label="Zoom in">
@@ -76,7 +78,10 @@ export function SceneShell({ snapshot }: { snapshot: SnapshotState }) {
         </div>
       )}
       <div className="scene-shell__telemetry">
-        <div className="scene-shell__hint">Drag to orbit · scroll / pinch to zoom · satellites & paths arrive Day 4</div>
+        <div className="scene-shell__hint">
+          Drag to orbit · scroll / pinch to zoom · markers ride their orbit paths as the core advances
+          simulation time
+        </div>
         {snapshot.kind === "loading" && (
           <div className="scene-shell__note">
             <span className="loading-screen__spinner" style={{ display: "inline-block", verticalAlign: "middle", marginRight: 8 }} />

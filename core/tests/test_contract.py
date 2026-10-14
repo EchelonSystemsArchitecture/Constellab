@@ -8,6 +8,7 @@ import json
 import math
 import sys
 import threading
+import time
 import unittest
 from pathlib import Path
 
@@ -19,11 +20,21 @@ from constellab_core.contract import (  # noqa: E402
     DEFINITIONS,
     SCHEMA,
     ContractError,
+    OrbitElements,
     SimulationConfig,
     SimulationSnapshot,
     is_compatible_version,
 )
-from constellab_core.orbit import EARTH_RADIUS_KM, MU_EARTH_KM3_S2, initial_snapshot, state_from_elements  # noqa: E402
+from constellab_core.orbit import (  # noqa: E402
+    EARTH_RADIUS_KM,
+    MU_EARTH_KM3_S2,
+    initial_snapshot,
+    mean_motion_rad_s,
+    orbital_period_s,
+    state_from_elements,
+    state_from_elements_at_time,
+    true_anomaly_at_time,
+)
 from constellab_core.service import CoreHandler, serve  # noqa: E402
 from constellab_core.validation import SchemaValidator, UnsupportedSchema  # noqa: E402
 
@@ -142,6 +153,81 @@ class TestOrbitConversion(unittest.TestCase):
             self.assertLess(v2 / 2 - MU_EARTH_KM3_S2 / r, 0, f"{sat.id} must be gravitationally bound")
 
 
+class TestOrbitPropagation(unittest.TestCase):
+    """Day 5: position is an analytic function of simulation time."""
+
+    def setUp(self):
+        self.config = builtin_scenario()
+
+    def test_epoch_true_anomaly_matches_declared_elements(self):
+        for sat in self.config.satellites:
+            with self.subTest(sat=sat.id):
+                self.assertAlmostEqual(
+                    true_anomaly_at_time(sat.orbit, 0.0) % 360.0,
+                    sat.orbit.true_anomaly_deg % 360.0,
+                    places=9,
+                )
+
+    def test_state_at_epoch_equals_t0_propagation(self):
+        for sat in self.config.satellites:
+            with self.subTest(sat=sat.id):
+                epoch = state_from_elements(sat.orbit)
+                at_zero = state_from_elements_at_time(sat.orbit, 0.0)
+                for expected, actual in zip(epoch[0] + epoch[1], at_zero[0] + at_zero[1]):
+                    self.assertAlmostEqual(expected, actual, places=6, msg=sat.id)
+
+    def test_one_full_period_returns_to_the_epoch_position(self):
+        for sat in self.config.satellites:
+            with self.subTest(sat=sat.id):
+                start = state_from_elements(sat.orbit)[0]
+                after = state_from_elements_at_time(sat.orbit, orbital_period_s(sat.orbit))[0]
+                for axis, (a, b) in enumerate(zip(start, after)):
+                    self.assertAlmostEqual(a, b, places=6, msg=f"{sat.id} axis {axis}")
+
+    def test_propagated_radius_follows_the_element_ellipse(self):
+        for sat in self.config.satellites:
+            orbit = sat.orbit
+            p = orbit.semi_major_axis_km * (1.0 - orbit.eccentricity ** 2)
+            for elapsed in (0.0, 60.0, 600.0, 3600.0, 20000.0):
+                position, _ = state_from_elements_at_time(orbit, elapsed)
+                radius = math.sqrt(sum(v * v for v in position))
+                nu = math.radians(true_anomaly_at_time(orbit, elapsed))
+                expected = p / (1.0 + orbit.eccentricity * math.cos(nu))
+                with self.subTest(sat=sat.id, t=elapsed):
+                    self.assertAlmostEqual(radius, expected, places=6)
+
+    def test_circular_orbit_advances_at_mean_motion(self):
+        elements = OrbitElements(
+            semi_major_axis_km=7000.0,
+            eccentricity=0.0,
+            inclination_deg=0.0,
+            raan_deg=0.0,
+            argument_of_perigee_deg=0.0,
+            true_anomaly_deg=0.0,
+        )
+        elapsed = 120.0
+        advanced = true_anomaly_at_time(elements, elapsed) - true_anomaly_at_time(elements, 0.0)
+        self.assertAlmostEqual(advanced, math.degrees(mean_motion_rad_s(elements) * elapsed), places=6)
+
+    def test_snapshot_uses_the_supplied_clock(self):
+        from constellab_core.contract import SimulationClock
+        from constellab_core.orbit import snapshot_at_time
+        from constellab_core.service import running_clock
+
+        clock = SimulationClock(epoch_utc="2026-10-12T00:00:00Z", simulation_time_s=0.0, time_scale=300.0, paused=False)
+        snapshot = snapshot_at_time(self.config, 42.0, clock)
+        self.assertFalse(snapshot.clock.paused)
+        self.assertEqual(snapshot.clock.time_scale, 300.0)
+        self.assertEqual(snapshot.clock.simulation_time_s, 42.0)
+        self.assertFalse(running_clock(self.config).paused)
+
+    def test_positions_change_over_time(self):
+        sat = self.config.satellites[0]
+        first = state_from_elements_at_time(sat.orbit, 0.0)[0]
+        later = state_from_elements_at_time(sat.orbit, 600.0)[0]
+        self.assertNotEqual(tuple(round(x, 6) for x in first), tuple(round(x, 6) for x in later))
+
+
 class TestHttpBridge(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -175,6 +261,19 @@ class TestHttpBridge(unittest.TestCase):
         self.assertEqual(len(snapshot.satellites), 4)
         res, _ = self._request("OPTIONS", "/api/snapshot")
         self.assertEqual(res.status, 204)
+
+    def test_service_clock_runs_and_advances(self):
+        res, first = self._request("GET", "/api/snapshot")
+        self.assertEqual(res.status, 200)
+        self.assertFalse(first["clock"]["paused"])
+        self.assertGreater(first["clock"]["time_scale"], 0)
+        second = first
+        for _ in range(20):
+            time.sleep(0.1)
+            _, second = self._request("GET", "/api/snapshot")
+            if second["clock"]["simulation_time_s"] > first["clock"]["simulation_time_s"]:
+                break
+        self.assertGreater(second["clock"]["simulation_time_s"], first["clock"]["simulation_time_s"])
 
     def test_contract_endpoint_serves_the_schema(self):
         res, payload = self._request("GET", "/api/contract")

@@ -1,11 +1,62 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import path from "node:path";
 import { test } from "node:test";
 import { PerspectiveCamera, SRGBColorSpace, Texture, Vector3 } from "three";
+import type { SatelliteConfig } from "../../contract";
 import { generateEarthTexture } from "../assets";
 import { resetCamera, zoomCamera } from "../camera";
 import { SCENE_CONFIG } from "../config";
 import { createEarthWorld } from "../EarthWorld";
 import { startViewport, ViewportRuntime } from "../lifecycle";
+import { createOrbitGeometry, eciToScene, satellitePositionFromOrbit } from "../orbit";
+
+const ROOT = path.resolve(__dirname, "..", "..", "..", "..");
+const DEMO = JSON.parse(
+  readFileSync(path.join(ROOT, "core", "constellab_core", "data", "scenario_four_satellites.json"), "utf8"),
+) as { satellites: SatelliteConfig[] };
+
+test("ECI -> scene mapping keeps the contract frame (Z is north)", () => {
+  const point = eciToScene([SCENE_CONFIG.units.kmPerSceneUnit, 0, 0]);
+  assert.ok(Math.abs(point.x - 1) < 1e-12);
+  assert.ok(Math.abs(point.y) < 1e-12);
+  const north = eciToScene([0, 0, SCENE_CONFIG.units.kmPerSceneUnit]);
+  assert.ok(Math.abs(north.z - 1) < 1e-12, "north must stay on the scene +Z axis");
+});
+
+test("orbit paths share one conic and one mapping with satellite positions", () => {
+  for (const sat of DEMO.satellites) {
+    const orbit = sat.orbit;
+    const geometry = createOrbitGeometry(orbit);
+    const attribute = geometry.getAttribute("position");
+    const segments = attribute.count - 1;
+    // Every sampled path point is exactly where the position function places it.
+    for (const index of [0, 1, segments / 2, segments]) {
+      const expected = satellitePositionFromOrbit(orbit, (index / segments) * 360);
+      // The path buffer is Float32, so agreement is to float precision.
+      assert.ok(Math.abs(attribute.getX(index) - expected.x) < 1e-6, `${sat.id} sample ${index} x`);
+      assert.ok(Math.abs(attribute.getY(index) - expected.y) < 1e-6, `${sat.id} sample ${index} y`);
+      assert.ok(Math.abs(attribute.getZ(index) - expected.z) < 1e-6, `${sat.id} sample ${index} z`);
+    }
+    // The path is closed and bounded by the element ellipse.
+    const scale = SCENE_CONFIG.units.kmPerSceneUnit;
+    const radii: number[] = [];
+    for (let i = 0; i < attribute.count; i++) {
+      radii.push(Math.hypot(attribute.getX(i), attribute.getY(i), attribute.getZ(i)));
+    }
+    const a = orbit.semi_major_axis_km / scale;
+    assert.ok(Math.abs(Math.min(...radii) - a * (1 - orbit.eccentricity)) < 0.01, `${sat.id} perigee`);
+    assert.ok(Math.abs(Math.max(...radii) - a * (1 + orbit.eccentricity)) < 0.01, `${sat.id} apogee`);
+    // The epoch marker sits on its own trajectory line.
+    const epoch = satellitePositionFromOrbit(orbit, orbit.true_anomaly_deg);
+    const nearest = Math.min(
+      ...Array.from({ length: geometry.getAttribute("position").count }, (_, i) =>
+        Math.hypot(attribute.getX(i) - epoch.x, attribute.getY(i) - epoch.y, attribute.getZ(i) - epoch.z),
+      ),
+    );
+    assert.ok(nearest < 0.03, `${sat.id} epoch marker is ${nearest} scene units off its path`);
+  }
+});
 
 function harness() {
   let nextId = 0;

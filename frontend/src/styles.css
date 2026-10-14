@@ -100,6 +100,9 @@ button:focus-visible {
   flex-direction: column;
   height: 100%;
   width: 100%;
+  /* Opaque shell: #root is white until the splash paints, so the app owns
+     its own background instead of showing that through. */
+  background: var(--bg);
 }
 
 .app__header {
@@ -129,10 +132,67 @@ button:focus-visible {
   gap: 6px;
 }
 
-.app__brand::before {
-  content: "◆";
-  color: var(--accent);
+.app__brand-mark {
+  width: 15px;
+  height: 15px;
+  display: block;
+  /* Brand artwork is dark ink; invert so it reads on the dark chrome. */
+  filter: brightness(0) invert(1);
+}
+
+/* Stage 1: white splash with the app icon and the constellab wordmark. */
+.loading-screen__splash {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 24px;
+  background: #ffffff;
+  transition: opacity 420ms ease;
+}
+
+.loading-screen__splash--hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.splash__icon {
+  width: 96px;
+  height: 96px;
+  border-radius: 22px;
+  animation: brand-in 600ms ease-out both;
+}
+
+/* Dark ink reads directly on the white splash; the enter stage inverts it. */
+.splash__wordmark {
+  width: min(300px, 62vw);
+  height: auto;
+  animation: brand-in 720ms ease-out both;
+}
+
+/* Stage 2: brand and Enter button over the rotating Earth. */
+.loading-screen__brand-wordmark {
+  width: min(260px, 56vw);
+  height: auto;
+  filter: brightness(0) invert(1);
+}
+
+.loading-screen__enter-hint {
+  margin: 14px 0 0;
   font-size: 12px;
+  color: var(--muted);
+}
+
+.loading-screen__enter-hint kbd {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  border: 1px solid var(--border-light);
+  border-radius: 4px;
+  padding: 1px 6px;
+  color: var(--text);
 }
 
 .app__tagline {
@@ -517,7 +577,24 @@ button:focus-visible {
   }
 }
 
+@keyframes brand-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 @media (max-width: 768px) {
+  .splash__icon {
+    width: 72px;
+    height: 72px;
+    border-radius: 17px;
+  }
+
   .loading-screen__viewport {
     opacity: 0.2;
     right: -30%;

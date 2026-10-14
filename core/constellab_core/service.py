@@ -117,7 +117,8 @@ class CoreHandler(BaseHTTPRequestHandler):
         elif route == "scenario":
             self._send(200, self.scenario.to_dict())
         elif route == "snapshot":
-            snap = snapshot_at_time(self.scenario, self.clock.simulation_time_s)
+            clock = self.clock
+            snap = snapshot_at_time(self.scenario, clock.simulation_time_s, clock)
             self._send(200, snap.to_dict())
         else:
             self._not_found()
@@ -150,7 +151,7 @@ class CoreServer(ThreadingHTTPServer):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.scenario = builtin_scenario()
-        self.clock = self.scenario.initial_clock()
+        self.clock = running_clock(self.scenario)
         self._clock_lock = threading.Lock()
         self._advance_thread: threading.Thread | None = None
         self._stop_advance = threading.Event()
@@ -183,10 +184,25 @@ class CoreServer(ThreadingHTTPServer):
                     )
 
 
+def running_clock(scenario: SimulationConfig) -> SimulationClock:
+    """A clock that already advances time at the scenario's ``time_scale``.
+
+    ``initial_snapshot`` keeps the epoch clock paused (it is the t = 0 state),
+    but the running service starts immediately so the renderer sees motion.
+    """
+    epoch = scenario.initial_clock()
+    return SimulationClock(
+        epoch_utc=epoch.epoch_utc,
+        simulation_time_s=0.0,
+        time_scale=epoch.time_scale,
+        paused=False,
+    )
+
+
 def serve(host: str = "127.0.0.1", port: int = 0, scenario: SimulationConfig | None = None) -> CoreServer:
     """Start the core HTTP server. port=0 picks a free ephemeral port."""
     server = CoreServer((host, port), CoreHandler)
     server.scenario = scenario or builtin_scenario()  # type: ignore[attr-defined]
-    server.clock = server.scenario.initial_clock()
+    server.clock = running_clock(server.scenario)
     server.start_advance()
     return server

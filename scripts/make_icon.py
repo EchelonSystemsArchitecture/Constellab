@@ -2,8 +2,9 @@
 
 Source of truth: assets/icons/icon.png (square, >= 1024 px).
 Outputs:
-  assets/icons/icon.ico       multi-resolution Windows icon (electron-builder / .exe)
-  frontend/public/favicon.png 256 px favicon served by Vite / packaged frontend
+  assets/icons/icon.ico             multi-resolution Windows icon (electron-builder / .exe)
+  frontend/public/favicon.png       256 px favicon served by Vite / packaged frontend
+  frontend/public/constellab-icon.png  startup-screen app icon
 
 Requires Pillow:  python -m pip install pillow
 Run via:          npm run icon
@@ -22,8 +23,10 @@ ROOT = Path(__file__).resolve().parent.parent
 SOURCE = ROOT / "assets" / "icons" / "icon.png"
 ICO = ROOT / "assets" / "icons" / "icon.ico"
 FAVICON = ROOT / "frontend" / "public" / "favicon.png"
+SPLASH_ICON = ROOT / "frontend" / "public" / "constellab-icon.png"
 ICO_SIZES = [16, 24, 32, 48, 64, 128, 256]
 FAVICON_SIZE = 256
+SPLASH_ICON_SIZE = 512
 
 
 def main() -> None:
@@ -40,8 +43,10 @@ def main() -> None:
         ICO, format="ICO", sizes=[(s, s) for s in ICO_SIZES], bitmap_format="png"
     )
     resized(FAVICON_SIZE).save(FAVICON, format="PNG", optimize=True)
+    resized(SPLASH_ICON_SIZE).save(SPLASH_ICON, format="PNG", optimize=True)
     print(f"wrote {ICO.relative_to(ROOT)} ({', '.join(map(str, ICO_SIZES))} px)")
     print(f"wrote {FAVICON.relative_to(ROOT)} ({FAVICON_SIZE} px)")
+    print(f"wrote {SPLASH_ICON.relative_to(ROOT)} ({SPLASH_ICON_SIZE} px)")
 
 
 if __name__ == "__main__":

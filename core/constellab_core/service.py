@@ -9,14 +9,16 @@ from __future__ import annotations
 import json
 import platform
 import sys
+import threading
+import time
 from datetime import datetime, timezone
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from typing import Any
 
 from . import SCHEMA_VERSION, __version__
 from .config import MAX_CONFIG_BYTES, ConfigError, builtin_scenario, validate_config_bytes
-from .contract import SCHEMA, ContractError, SimulationConfig
-from .orbit import initial_snapshot
+from .contract import SCHEMA, ContractError, SimulationClock, SimulationConfig
+from .orbit import initial_snapshot, snapshot_at_time
 
 ROUTES = {
     ("GET", "/api/status"): "status",
@@ -66,6 +68,10 @@ class CoreHandler(BaseHTTPRequestHandler):
     def scenario(self) -> SimulationConfig:
         return self.server.scenario  # type: ignore[attr-defined]
 
+    @property
+    def clock(self) -> SimulationClock:
+        return self.server.clock  # type: ignore[attr-defined]
+
     def _send(self, code: int, payload: Any) -> None:
         body = _json_bytes(payload)
         self.send_response(code)
@@ -111,7 +117,8 @@ class CoreHandler(BaseHTTPRequestHandler):
         elif route == "scenario":
             self._send(200, self.scenario.to_dict())
         elif route == "snapshot":
-            self._send(200, initial_snapshot(self.scenario).to_dict())
+            snap = snapshot_at_time(self.scenario, self.clock.simulation_time_s)
+            self._send(200, snap.to_dict())
         else:
             self._not_found()
 
@@ -137,8 +144,49 @@ class CoreHandler(BaseHTTPRequestHandler):
                 self._send(500, {"error": "snapshot_failed", "errors": exc.errors})
 
 
-def serve(host: str = "127.0.0.1", port: int = 0, scenario: SimulationConfig | None = None) -> ThreadingHTTPServer:
+class CoreServer(ThreadingHTTPServer):
+    """ThreadingHTTPServer with a mutable simulation clock and auto-advance."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.scenario = builtin_scenario()
+        self.clock = self.scenario.initial_clock()
+        self._clock_lock = threading.Lock()
+        self._advance_thread: threading.Thread | None = None
+        self._stop_advance = threading.Event()
+
+    def start_advance(self):
+        if self._advance_thread is None or not self._advance_thread.is_alive():
+            self._stop_advance.clear()
+            self._advance_thread = threading.Thread(target=self._advance_loop, daemon=True)
+            self._advance_thread.start()
+
+    def stop_advance(self):
+        self._stop_advance.set()
+        if self._advance_thread:
+            self._advance_thread.join(timeout=1.0)
+
+    def _advance_loop(self):
+        last_wall = time.monotonic()
+        while not self._stop_advance.is_set():
+            time.sleep(0.1)
+            now = time.monotonic()
+            dt = now - last_wall
+            last_wall = now
+            with self._clock_lock:
+                if not self.clock.paused:
+                    self.clock = SimulationClock(
+                        epoch_utc=self.clock.epoch_utc,
+                        simulation_time_s=self.clock.simulation_time_s + dt * self.clock.time_scale,
+                        time_scale=self.clock.time_scale,
+                        paused=self.clock.paused,
+                    )
+
+
+def serve(host: str = "127.0.0.1", port: int = 0, scenario: SimulationConfig | None = None) -> CoreServer:
     """Start the core HTTP server. port=0 picks a free ephemeral port."""
-    server = ThreadingHTTPServer((host, port), CoreHandler)
+    server = CoreServer((host, port), CoreHandler)
     server.scenario = scenario or builtin_scenario()  # type: ignore[attr-defined]
+    server.clock = server.scenario.initial_clock()
+    server.start_advance()
     return server

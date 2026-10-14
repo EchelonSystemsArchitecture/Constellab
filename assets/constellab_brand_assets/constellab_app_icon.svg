@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="2048" height="2048" viewBox="0 0 400 400">
+  <rect width="400" height="400" rx="68" fill="#111d20"/>
+  <!-- Circular seal and angular core. -->
+  <circle cx="200" cy="200" r="120" fill="none" stroke="#f6f5ed" stroke-width="11"/>
+  <path d="M261 154 L200 125 L139 154 L139 246 L200 275 L261 246" fill="none" stroke="#f6f5ed" stroke-width="22" stroke-linecap="butt" stroke-linejoin="miter"/>
+  <!-- One continuous orbital ellipse passes above the seal and core. -->
+  <ellipse cx="200" cy="200" rx="170" ry="42" transform="rotate(-34 200 200)" fill="none" stroke="#f6f5ed" stroke-width="8" stroke-linecap="round"/>
+  <circle cx="200" cy="200" r="16.5" fill="#f6f5ed"/>
+</svg>

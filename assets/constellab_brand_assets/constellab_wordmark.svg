@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="3300" height="1080" viewBox="0 0 1100 360">
+  <g transform="translate(0 20) scale(.8)">
+    <circle cx="200" cy="200" r="120" fill="none" stroke="#111b1e" stroke-width="11"/>
+    <path d="M261 154 L200 125 L139 154 L139 246 L200 275 L261 246" fill="none" stroke="#111b1e" stroke-width="22" stroke-linecap="butt" stroke-linejoin="miter"/>
+    <ellipse cx="200" cy="200" rx="170" ry="42" transform="rotate(-34 200 200)" fill="none" stroke="#111b1e" stroke-width="8" stroke-linecap="round"/>
+    <circle cx="200" cy="200" r="16.5" fill="#111b1e"/>
+  </g>
+  <text x="320" y="219" font-family="Inter Display, Inter, DejaVu Sans, sans-serif" font-size="88" font-weight="750" letter-spacing="-2.3" fill="#111b1e">constellab</text>
+  <!-- restrained star accents echo the supplied lockup -->
+  <g fill="#111b1e">
+    <path d="M809 107 L812 116 L821 119 L812 122 L809 131 L806 122 L797 119 L806 116 Z"/>
+    <path d="M850 83 L852 89 L858 91 L852 93 L850 99 L848 93 L842 91 L848 89 Z"/>
+    <path d="M877 123 L879 129 L885 131 L879 133 L877 139 L875 133 L869 131 L875 129 Z"/>
+    <path d="M416 256 L418 262 L424 264 L418 266 L416 272 L414 266 L408 264 L414 262 Z"/>
+    <path d="M468 249 L470 256 L477 258 L470 260 L468 267 L466 260 L459 258 L466 256 Z"/>
+  </g>
+</svg>

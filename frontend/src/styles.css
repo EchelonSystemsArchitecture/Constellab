@@ -608,3 +608,75 @@ button:focus-visible {
     padding: 24px;
   }
 }
+
+.scene-shell__timecontrol {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px 12px;
+  background: rgba(37, 37, 38, 0.85);
+  backdrop-filter: blur(8px);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  min-width: 200px;
+}
+
+.timecontrol__row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.timecontrol__label {
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  white-space: nowrap;
+}
+
+.timecontrol__select {
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text);
+  font-size: 12px;
+  padding: 4px 8px;
+  min-width: 140px;
+  cursor: pointer;
+}
+
+.timecontrol__select:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.timecontrol__btn {
+  background: var(--panel-alt);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 500;
+  padding: 6px 12px;
+  cursor: pointer;
+  transition: all var(--transition);
+}
+
+.timecontrol__btn:hover:not(:disabled) {
+  background: var(--panel);
+  border-color: var(--accent);
+  color: var(--text-bright);
+}
+
+.timecontrol__btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.timecontrol__btn--active {
+  background: var(--ok-dim);
+  border-color: rgba(137, 209, 133, 0.4);
+  color: var(--ok);
+}

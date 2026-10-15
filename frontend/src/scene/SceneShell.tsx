@@ -1,11 +1,25 @@
 import { useEffect, useId, useRef, useState } from "react";
 import type { SnapshotState } from "../App";
-import type { SatelliteState } from "../contract";
+import type { SatelliteState, SimulationClock } from "../contract";
 import { EarthScene } from "./EarthScene";
 import { getSatelliteColor } from "./orbit";
 import { SCENE_CONFIG } from "./config";
 
+const CORE_URL = "http://127.0.0.1:8765";
 
+async function clockPost(action: string, body?: object): Promise<SimulationClock | null> {
+  try {
+    const res = await fetch(`${CORE_URL}/api/clock/${action}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: body ? JSON.stringify(body) : undefined,
+    });
+    if (!res.ok) return null;
+    return (await res.json()) as SimulationClock;
+  } catch {
+    return null;
+  }
+}
 
 const km = (v: number) => v.toFixed(1);
 const kms = (v: number) => v.toFixed(3);
@@ -30,11 +44,7 @@ export function SceneShell({ snapshot }: { snapshot: SnapshotState }) {
   const [sceneError, setSceneError] = useState<string | null>(null);
   const [timeWarp, setTimeWarp] = useState<number>(SCENE_CONFIG.timeWarp.default);
   const timeWarpId = useId();
-  const [displayedTimeWarp, setDisplayedTimeWarp] = useState<number>(SCENE_CONFIG.timeWarp.default);
-
-  useEffect(() => {
-    setDisplayedTimeWarp(timeWarp);
-  }, [timeWarp]);
+  const [clockState, setClockState] = useState<SimulationClock | null>(null);
 
   useEffect(() => {
     if (!viewport.current) return;
@@ -53,6 +63,36 @@ export function SceneShell({ snapshot }: { snapshot: SnapshotState }) {
   useEffect(() => {
     scene.current?.setSnapshot(snapshot.kind === "ready" ? snapshot.snapshot : null);
   }, [snapshot]);
+
+  const handlePause = async () => {
+    const newClock = await clockPost("pause");
+    if (newClock) setClockState(newClock);
+  };
+
+  const handleResume = async () => {
+    const newClock = await clockPost("resume");
+    if (newClock) setClockState(newClock);
+  };
+
+  const handleReset = async () => {
+    const newClock = await clockPost("reset");
+    if (newClock) setClockState(newClock);
+  };
+
+  const handleStep = async () => {
+    const newClock = await clockPost("step");
+    if (newClock) setClockState(newClock);
+  };
+
+  const handleTimeScaleChange = async (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const v = Number(e.target.value);
+    setTimeWarp(v);
+    const newClock = await clockPost("time_scale", { time_scale: v });
+    if (newClock) setClockState(newClock);
+  };
+
+  const isPaused = clockState?.paused ?? (snapshot.kind === "ready" && snapshot.snapshot.clock.paused);
+  const displayTimeWarp = clockState?.time_scale ?? timeWarp;
 
   return (
     <section className="scene-shell" data-testid="scene-shell" aria-label="Orbital viewport">
@@ -79,28 +119,52 @@ export function SceneShell({ snapshot }: { snapshot: SnapshotState }) {
             Reset view
           </button>
         </div>
-        <div className="scene-shell__timecontrol" role="group" aria-label="Time warp">
-          <label htmlFor={timeWarpId} className="timecontrol__label">Time warp</label>
-          <select
-            id={timeWarpId}
-            value={displayedTimeWarp}
-            onChange={(e) => {
-              const v = Number(e.target.value);
-              setTimeWarp(v);
-              setDisplayedTimeWarp(v);
-            }}
-            disabled={!!sceneError}
-            className="timecontrol__select"
-          >
-            <option value={1}>1× (real time)</option>
-            <option value={10}>10×</option>
-            <option value={60}>60× (1 min/sec)</option>
-            <option value={300}>300× (5 min/sec)</option>
-            <option value={3600}>1,000× (1 hr/sec)</option>
-            <option value={36000}>10,000×</option>
-            <option value={360000}>100,000×</option>
-            <option value={1000000}>1,000,000×</option>
-          </select>
+        <div className="scene-shell__timecontrol" role="group" aria-label="Time controls">
+          <div className="timecontrol__row">
+            <button
+              className={`timecontrol__btn ${isPaused ? "timecontrol__btn--active" : ""}`}
+              onClick={isPaused ? handleResume : handlePause}
+              disabled={!!sceneError}
+              aria-pressed={isPaused}
+            >
+              {isPaused ? "Resume" : "Pause"}
+            </button>
+            <button
+              className="timecontrol__btn"
+              onClick={handleReset}
+              disabled={!!sceneError}
+              title="Reset to epoch (t=0)"
+            >
+              Reset
+            </button>
+            <button
+              className="timecontrol__btn"
+              onClick={handleStep}
+              disabled={!!sceneError || !isPaused}
+              title="Single step (1 simulation second)"
+            >
+              Step
+            </button>
+          </div>
+          <div className="timecontrol__row">
+            <label htmlFor={timeWarpId} className="timecontrol__label">Time warp</label>
+            <select
+              id={timeWarpId}
+              value={displayTimeWarp}
+              onChange={handleTimeScaleChange}
+              disabled={!!sceneError}
+              className="timecontrol__select"
+            >
+              <option value={1}>1× (real time)</option>
+              <option value={10}>10×</option>
+              <option value={60}>60× (1 min/sec)</option>
+              <option value={300}>300× (5 min/sec)</option>
+              <option value={3600}>1,000× (1 hr/sec)</option>
+              <option value={36000}>10,000×</option>
+              <option value={360000}>100,000×</option>
+              <option value={1000000}>1,000,000×</option>
+            </select>
+          </div>
         </div>
       </div>
       {sceneError && (

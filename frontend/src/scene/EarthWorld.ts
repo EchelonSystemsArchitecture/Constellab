@@ -1,13 +1,18 @@
 import {
   AmbientLight, Color, DirectionalLight, Mesh, MeshStandardMaterial, Scene, SphereGeometry,
+  RepeatWrapping,
 } from "three";
 import type { SceneAssets } from "./assets";
 import { SCENE_CONFIG } from "./config";
 
+// Builds the Earth sphere from whatever texture provider it is handed:
+// REAL_EARTH_ASSETS (NASA Blue Marble image) in the app, OFFLINE_ASSETS (canvas
+// schematic) or a test double. The world never chooses the texture itself.
 export function createEarthWorld(assets: SceneAssets) {
   const config = SCENE_CONFIG;
   const scene = new Scene();
   scene.background = new Color(config.background);
+
   const texture = assets.createEarthTexture();
   const geometry = new SphereGeometry(config.earth.radius, config.earth.widthSegments, config.earth.heightSegments);
   const material = new MeshStandardMaterial({
@@ -18,6 +23,12 @@ export function createEarthWorld(assets: SceneAssets) {
   const earth = new Mesh(geometry, material);
   // Three.js sphere geometry is Y-up; reserve world Z for the contract's north/ECI axis.
   earth.rotation.x = Math.PI / 2;
+  // Softer roughness = poles get lit instead of going fully black.
+  material.roughness = config.earth.roughness;
+  // Ensure texture doesn't seam or repeat to a different color at the poles.
+  texture.wrapS = RepeatWrapping;
+  texture.wrapT = RepeatWrapping;
+  texture.repeat.set(1, 1);
   scene.add(earth);
   scene.add(new AmbientLight(config.lighting.ambientColor, config.lighting.ambientIntensity));
   const sun = new DirectionalLight(config.lighting.sunColor, config.lighting.sunIntensity);

@@ -1,8 +1,11 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import type { SnapshotState } from "../App";
 import type { SatelliteState } from "../contract";
 import { EarthScene } from "./EarthScene";
 import { getSatelliteColor } from "./orbit";
+import { SCENE_CONFIG } from "./config";
+
+
 
 const km = (v: number) => v.toFixed(1);
 const kms = (v: number) => v.toFixed(3);
@@ -25,6 +28,13 @@ export function SceneShell({ snapshot }: { snapshot: SnapshotState }) {
   const viewport = useRef<HTMLDivElement>(null);
   const scene = useRef<EarthScene | null>(null);
   const [sceneError, setSceneError] = useState<string | null>(null);
+  const [timeWarp, setTimeWarp] = useState<number>(SCENE_CONFIG.timeWarp.default);
+  const timeWarpId = useId();
+  const [displayedTimeWarp, setDisplayedTimeWarp] = useState<number>(SCENE_CONFIG.timeWarp.default);
+
+  useEffect(() => {
+    setDisplayedTimeWarp(timeWarp);
+  }, [timeWarp]);
 
   useEffect(() => {
     if (!viewport.current) return;
@@ -51,7 +61,7 @@ export function SceneShell({ snapshot }: { snapshot: SnapshotState }) {
         <div>
           <div className="scene-shell__title">Earth / Orbital Viewport</div>
           <div className="scene-shell__subtitle">
-            Offline schematic texture · ECI frame · illustrative two-body orbits
+            Real Earth (Blue Marble) · ECI frame · illustrative two-body orbits
           </div>
         </div>
         <div className="scene-shell__controls" role="group" aria-label="Camera controls">
@@ -68,6 +78,29 @@ export function SceneShell({ snapshot }: { snapshot: SnapshotState }) {
           <button disabled={!!sceneError} onClick={() => scene.current?.reset()}>
             Reset view
           </button>
+        </div>
+        <div className="scene-shell__timecontrol" role="group" aria-label="Time warp">
+          <label htmlFor={timeWarpId} className="timecontrol__label">Time warp</label>
+          <select
+            id={timeWarpId}
+            value={displayedTimeWarp}
+            onChange={(e) => {
+              const v = Number(e.target.value);
+              setTimeWarp(v);
+              setDisplayedTimeWarp(v);
+            }}
+            disabled={!!sceneError}
+            className="timecontrol__select"
+          >
+            <option value={1}>1× (real time)</option>
+            <option value={10}>10×</option>
+            <option value={60}>60× (1 min/sec)</option>
+            <option value={300}>300× (5 min/sec)</option>
+            <option value={3600}>1,000× (1 hr/sec)</option>
+            <option value={36000}>10,000×</option>
+            <option value={360000}>100,000×</option>
+            <option value={1000000}>1,000,000×</option>
+          </select>
         </div>
       </div>
       {sceneError && (

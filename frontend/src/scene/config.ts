@@ -7,9 +7,9 @@ export const SCENE_CONFIG = {
   },
   earth: {
     radius: 1,
-    widthSegments: 64,
-    heightSegments: 32,
-    roughness: 0.85,
+    widthSegments: 128,
+    heightSegments: 64,
+    roughness: 0.55,
     metalness: 0,
   },
   texture: {
@@ -42,5 +42,11 @@ export const SCENE_CONFIG = {
   renderer: {
     maxPixelRatio: 2,
     exposure: 1,
+  },
+  timeWarp: {
+    // Simulation time multiplier: 1 = real time, up to 1,000,000x.
+    min: 1,
+    max: 1_000_000,
+    default: 300,
   },
 } as const;

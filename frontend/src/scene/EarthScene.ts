@@ -3,7 +3,8 @@ import {
 } from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import type { SimulationSnapshot } from "../contract";
-import { OFFLINE_ASSETS, SceneAssets } from "./assets";
+import type { SceneAssets } from "./assets";
+import { REAL_EARTH_ASSETS } from "./assets";
 import { resetCamera, zoomCamera } from "./camera";
 import { SCENE_CONFIG } from "./config";
 import { createEarthWorld } from "./EarthWorld";
@@ -20,7 +21,7 @@ export class EarthScene {
   private readonly satelliteMeshes: Map<string, { mesh: Mesh; index: number }> = new Map();
   private disposed = false;
 
-  constructor(host: HTMLElement, assets: SceneAssets = OFFLINE_ASSETS) {
+  constructor(host: HTMLElement, assets: SceneAssets = REAL_EARTH_ASSETS) {
     const config = SCENE_CONFIG;
     this.renderer = new WebGLRenderer({ antialias: true });
     this.renderer.toneMapping = ACESFilmicToneMapping;

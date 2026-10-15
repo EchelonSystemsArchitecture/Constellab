@@ -1,11 +1,29 @@
-import { CanvasTexture, SRGBColorSpace, Texture } from "three";
+import { CanvasTexture, RepeatWrapping, SRGBColorSpace, Texture, TextureLoader } from "three";
 import { SCENE_CONFIG } from "./config";
 
-export interface SceneAssets {
-  createEarthTexture(): Texture;
+// Real NASA Blue Marble: Next Generation (December 2004) with topography and
+// bathymetry. Verified live 2026-10-15: HTTP 200, image/jpeg, ~150KB.
+// The path is relative on purpose: the packaged desktop app loads index.html over
+// file://, where an absolute URL would resolve outside the bundle.
+export const REAL_EARTH_TEXTURE_URL = "https://assets.science.nasa.gov/dynamicimage/assets/science/esd/eo/images/bmng/bmng-topography-bathymetry/december/world.topo.bathy.200412.3x5400x2700.jpg";
+
+// Loaded on demand, never at module init, so importing this module stays safe in
+// Node.js (the scene tests) where there is no DOM.
+let realEarthTexture: Texture | undefined;
+
+export function getRealEarthTexture(): Texture {
+  if (!realEarthTexture) {    const loader = new TextureLoader();
+    const tex = loader.load(REAL_EARTH_TEXTURE_URL);
+    tex.colorSpace = SRGBColorSpace;
+    tex.wrapS = RepeatWrapping;
+    tex.wrapT = RepeatWrapping;
+    tex.repeat.set(1, 1);
+    realEarthTexture = tex;
+  }
+  return realEarthTexture;
 }
 
-// Schematic silhouettes, not a geographic dataset or a simulation model.
+// Schematic land/sea outlines drawn on canvas, not a geographic dataset or a simulation model.
 const LAND_OUTLINES: readonly (readonly (readonly [number, number])[])[] = [
   [[-168, 68], [-135, 72], [-115, 55], [-80, 52], [-52, 45], [-82, 25], [-97, 15], [-110, 29], [-130, 48]],
   [[-80, 12], [-50, 5], [-35, -10], [-52, -35], [-70, -55], [-78, -18]],
@@ -16,12 +34,15 @@ const LAND_OUTLINES: readonly (readonly (readonly [number, number])[])[] = [
   [[46, -13], [51, -17], [47, -26], [44, -21]],
 ];
 
+// Generate a schematic Earth texture on a canvas (offline/failure fallback).
+// This is NOT a real map — it's a simple silhouette drawing.
 export function generateEarthTexture(canvas: HTMLCanvasElement): CanvasTexture {
   const settings = SCENE_CONFIG.texture;
   canvas.width = settings.width;
   canvas.height = settings.height;
   const ctx = canvas.getContext("2d");
   if (!ctx) throw new Error("A 2D canvas is needed to generate the offline Earth texture.");
+
   const point = (lon: number, lat: number) =>
     [(lon + 180) / 360 * canvas.width, (90 - lat) / 180 * canvas.height];
 
@@ -60,6 +81,17 @@ export function generateEarthTexture(canvas: HTMLCanvasElement): CanvasTexture {
   return texture;
 }
 
+// Scene assets that use the real NASA Blue Marble texture (default in the app).
+export const REAL_EARTH_ASSETS: SceneAssets = {
+  createEarthTexture: getRealEarthTexture,
+};
+
 export const OFFLINE_ASSETS: SceneAssets = {
   createEarthTexture: () => generateEarthTexture(document.createElement("canvas")),
 };
+
+// Replaceable texture provider: the viewport only needs something that can hand
+// back a Three.js texture, so tests inject one without a DOM or a network.
+export interface SceneAssets {
+  createEarthTexture(): Texture;
+}

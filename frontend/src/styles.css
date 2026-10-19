@@ -2206,3 +2206,334 @@ button:focus-visible {
   box-shadow: 0 0 8px rgba(255, 118, 95, 0.3);
 }
 
+/* --------------------------------------------------------------------------
+   DAY 7 — SATELLITE INSPECTOR PANEL
+   Right-side typed inspector. Same panel language as the drawer: translucent
+   observatory card, orbit-navy hairline, Chakra Petch labels, mono values.
+   -------------------------------------------------------------------------- */
+.inspector {
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 52px;
+  width: 380px;
+  max-width: 92vw;
+  z-index: 26;
+  display: flex;
+  flex-direction: column;
+  background: rgba(16, 24, 39, 0.96);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border-left: 1px solid rgba(27, 43, 74, 0.95);
+  box-shadow: -10px 0 30px rgba(0, 0, 0, 0.7);
+  animation: inspector-in 180ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes inspector-in {
+  from { opacity: 0; transform: translateX(12px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+.inspector__header {
+  height: 44px;
+  flex-shrink: 0;
+  padding: 0 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(27, 43, 74, 0.9);
+}
+
+.inspector__title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-chakra);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1.8px;
+  color: var(--color-starlight);
+}
+
+.inspector__header-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.inspector__icon-btn {
+  background: transparent;
+  border: none;
+  color: var(--color-telemetry-grey);
+  font-size: 13px;
+  line-height: 1;
+  padding: 5px 8px;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.inspector__icon-btn:hover {
+  color: #fff;
+  background: rgba(27, 43, 74, 0.7);
+}
+
+.inspector__chips {
+  flex-shrink: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  padding: 10px 14px;
+  border-bottom: 1px solid rgba(27, 43, 74, 0.6);
+}
+
+.inspector__empty-note {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--color-telemetry-grey);
+}
+
+.inspector__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(27, 43, 74, 0.45);
+  border: 1px solid rgba(27, 43, 74, 0.9);
+  border-radius: 3px;
+  padding: 4px 8px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--color-telemetry-grey);
+  cursor: pointer;
+  transition: all 120ms ease;
+}
+
+.inspector__chip:hover {
+  color: var(--color-starlight);
+  border-color: rgba(61, 104, 178, 0.7);
+}
+
+.inspector__chip--active {
+  background: rgba(61, 104, 178, 0.22);
+  color: var(--color-starlight);
+  box-shadow: 0 0 10px rgba(61, 104, 178, 0.35);
+}
+
+.inspector__body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 12px 14px;
+  gap: 10px;
+}
+
+.inspector__body--muted {
+  color: var(--color-telemetry-grey);
+  font-size: 11.5px;
+  line-height: 1.55;
+  padding: 16px 14px;
+}
+
+.inspector__body--missing {
+  padding: 16px 14px;
+  color: var(--color-solar-gold);
+  font-size: 12px;
+}
+
+.inspector__missing-title {
+  font-family: var(--font-chakra);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1.6px;
+  color: var(--color-solar-gold);
+  margin-bottom: 4px;
+}
+
+.inspector__body--missing p {
+  color: var(--color-telemetry-grey);
+  line-height: 1.5;
+  margin: 8px 0;
+}
+
+.inspector__link-btn {
+  background: transparent;
+  border: none;
+  padding: 0;
+  color: var(--color-core-blue);
+  font-family: var(--font-chakra);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 1.4px;
+  cursor: pointer;
+}
+
+.inspector__link-btn:hover {
+  color: #93c5fd;
+}
+
+.inspector__hero {
+  flex-shrink: 0;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  grid-template-areas:
+    "id actions"
+    "clock actions";
+  gap: 6px 10px;
+  border: 1px solid rgba(27, 43, 74, 0.9);
+  border-left-width: 3px;
+  border-radius: 4px;
+  background: rgba(27, 43, 74, 0.32);
+  padding: 9px 11px;
+}
+
+.inspector__hero-main {
+  grid-area: id;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.inspector__hero-id {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--color-starlight);
+  letter-spacing: 0.6px;
+}
+
+.inspector__hero-swatch {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  box-shadow: 0 0 8px currentColor;
+}
+
+.inspector__hero-actions {
+  grid-area: actions;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.inspector__action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 24px;
+  padding: 0 8px;
+  background: rgba(27, 43, 74, 0.75);
+  border: 1px solid rgba(61, 104, 178, 0.55);
+  border-radius: 3px;
+  color: var(--color-starlight);
+  font-family: var(--font-chakra);
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+  cursor: pointer;
+  transition: all 120ms ease;
+}
+
+.inspector__action-btn:hover:not(:disabled) {
+  background: rgba(61, 104, 178, 0.45);
+  border-color: var(--color-core-blue);
+  color: #fff;
+}
+
+.inspector__action-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.inspector__hero-clock {
+  grid-area: clock;
+  font-size: 9.5px;
+  color: var(--color-telemetry-grey);
+}
+
+.inspector__scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-right: 2px;
+}
+
+.inspector__section-title {
+  margin: 0 0 6px;
+  font-family: var(--font-chakra);
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 1.8px;
+  color: var(--color-telemetry-grey);
+}
+
+.inspector__grid {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid rgba(27, 43, 74, 0.55);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.inspector__row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 5px 9px;
+  background: rgba(16, 24, 39, 0.55);
+  border-bottom: 1px solid rgba(27, 43, 74, 0.35);
+}
+
+.inspector__row:nth-child(even) {
+  background: rgba(27, 43, 74, 0.18);
+}
+
+.inspector__row:last-child {
+  border-bottom: none;
+}
+
+.inspector__label {
+  font-family: var(--font-chakra);
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 1.2px;
+  color: var(--color-telemetry-grey);
+  white-space: nowrap;
+}
+
+.inspector__value {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--color-pale-aurora);
+  text-align: right;
+  word-break: break-word;
+}
+
+.inspector__unit {
+  font-size: 9px;
+  color: var(--color-telemetry-grey);
+}
+
+.inspector__value--unavailable {
+  color: var(--color-solar-gold);
+  font-size: 9.5px;
+  letter-spacing: 0.6px;
+}
+
+/* Left rail: saturated vs. muted inactive states are easier to scan than hue alone */
+.rail-item[aria-pressed="true"]::after {
+  content: "";
+  position: absolute;
+  left: -8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 2px;
+  height: 16px;
+  background: var(--color-core-blue);
+  box-shadow: 0 0 8px var(--color-core-blue);
+  border-radius: 1px;
+}

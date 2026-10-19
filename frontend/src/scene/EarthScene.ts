@@ -10,6 +10,7 @@ import { SCENE_CONFIG } from "./config";
 import { createEarthWorld } from "./EarthWorld";
 import { BROWSER_RUNTIME, startViewport } from "./lifecycle";
 import { createSatelliteVisuals, eciToScene, getSatelliteColor } from "./orbit";
+import { focusCamera, pickSatellite } from "./selection";
 import { createTacticalEarthOverlays } from "./tacticalOverlays";
 
 export interface SatelliteProjection {
@@ -37,6 +38,9 @@ export class EarthScene {
   private currentSnapshot: SimulationSnapshot | null = null;
   private disposed = false;
   private onRenderCallback?: (projections: SatelliteProjection[]) => void;
+  private onSelectCallback?: (id: string | null) => void;
+  private lastProjections: SatelliteProjection[] = [];
+  private selectedId: string | null = null;
   private autoRotate = true;
   private rotationSpeed = 0.0006;
 
@@ -72,6 +76,9 @@ export class EarthScene {
     this.overlays = createTacticalEarthOverlays();
     this.worldScene.add(this.overlays.group);
 
+    // Day 7: clicking the canvas picks the nearest visible satellite marker.
+    this.renderer.domElement.addEventListener("click", this.handleClick);
+
     host.appendChild(this.renderer.domElement);
     this.stopViewport = startViewport(host, {
       resize: (width, height, pixelRatio) => {
@@ -89,11 +96,13 @@ export class EarthScene {
         }
         this.controls.update();
         this.renderer.render(this.worldScene, this.camera);
+        this.lastProjections = this.calculateProjections();
         if (this.onRenderCallback) {
-          this.onRenderCallback(this.calculateProjections());
+          this.onRenderCallback(this.lastProjections);
         }
       },
       dispose: () => {
+        this.renderer.domElement.removeEventListener("click", this.handleClick);
         this.controls.dispose();
         this.overlays.dispose();
         world.dispose();
@@ -104,8 +113,48 @@ export class EarthScene {
     }, BROWSER_RUNTIME, config.renderer.maxPixelRatio);
   }
 
+  private readonly handleClick = (event: MouseEvent) => {
+    if (!this.onSelectCallback) return;
+    const rect = this.renderer.domElement.getBoundingClientRect();
+    const id = pickSatellite(this.lastProjections, event.clientX - rect.left, event.clientY - rect.top);
+    if (id) this.onSelectCallback(id);
+  };
+
   setOnRender(callback?: (projections: SatelliteProjection[]) => void) {
     this.onRenderCallback = callback;
+  }
+
+  /** Called with the satellite id picked on the canvas; null clears the selection. */
+  setOnSelect(callback?: (id: string | null) => void) {
+    this.onSelectCallback = callback;
+  }
+
+  /** Highlight the selected marker without touching simulation state. */
+  setSelection(id: string | null) {
+    if (this.selectedId === id) return;
+    this.selectedId = id;
+    for (const [satId, entry] of this.satelliteMeshes) {
+      entry.mesh.scale.setScalar(satId === id ? 1.7 : 1);
+    }
+  }
+
+  /**
+   * Aim the camera at one satellite while keeping the Earth in frame.
+   * Returns false when the id is not currently rendered.
+   */
+  focusSatellite(id: string): boolean {
+    const entry = this.satelliteMeshes.get(id);
+    if (!entry || this.disposed) return false;
+    const position = entry.mesh.position;
+    const distance = Math.min(
+      SCENE_CONFIG.camera.maxDistance,
+      Math.max(2.4, position.length() + 1.6),
+    );
+    focusCamera(this.camera, this.controls, position, distance);
+    this.controls.update();
+    // Observable state for UI/e2e checks: which satellite the camera is aimed at.
+    this.renderer.domElement.dataset.focusedSatellite = id;
+    return true;
   }
 
   setOverlaysVisible(visible: boolean) {
@@ -225,6 +274,7 @@ export class EarthScene {
         existing.mesh.position.copy(eciToScene(sat.position_eci_km));
       } else {
         const visuals = createSatelliteVisuals(sat, color);
+        visuals.satelliteMesh.scale.setScalar(sat.id === this.selectedId ? 1.7 : 1);
         (visuals.orbitLine.userData as any).meshId = sat.id;
         this.worldScene.add(visuals.orbitLine);
         this.worldScene.add(visuals.satelliteMesh);

@@ -4,6 +4,7 @@ import type { SatelliteState, SimulationClock } from "../contract";
 import type { SatelliteProjection } from "./EarthScene";
 import { EarthScene } from "./EarthScene";
 import { GroundTrackMap } from "./GroundTrackMap";
+import { InspectorPanel } from "./InspectorPanel";
 import { getSatelliteColor } from "./orbit";
 import { SCENE_CONFIG } from "./config";
 
@@ -60,7 +61,10 @@ function SatelliteRow({
   const [x, y, z] = sat.position_eci_km;
   const [vx, vy, vz] = sat.velocity_eci_km_s;
   const colorHex = `#${color.toString(16).padStart(6, "0")}`;
-  const isAnomaly = sat.id.toLowerCase().includes("02") || sat.id.toLowerCase().includes("anomaly");
+  // NOTE: the "anomaly" label is a Day 4 visual badge carried over from the reference
+  // design. The contract has no health field, so this is presentation only; Day 9+ replaces
+  // it with the real parameter model.
+  const isAnomaly = sat.id.toLowerCase().includes("anomaly");
 
   return (
     <tr
@@ -98,13 +102,13 @@ export function SceneShell({ snapshot, status, statusError, onExit }: SceneShell
   // Tactical UI State
   const [viewMode, setViewMode] = useState<"3d" | "2d">("3d");
   const [projections, setProjections] = useState<SatelliteProjection[]>([]);
-  const [selectedSatId, setSelectedSatId] = useState<string | null>("sat-02");
+  const [selectedSatId, setSelectedSatId] = useState<string | null>(null);
+  const [isInspectorOpen, setIsInspectorOpen] = useState(false);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [autoRotate] = useState(true);
   const [showOverlays, setShowOverlays] = useState(true);
   const [showCallouts] = useState(true);
-  const [activeTab, setActiveTab] = useState<"orbits" | "sensors" | "anomalies" | "telemetry" | "settings">("orbits");
 
   // Mount Three.js viewport
   useEffect(() => {
@@ -112,6 +116,11 @@ export function SceneShell({ snapshot, status, statusError, onExit }: SceneShell
     try {
       scene.current = new EarthScene(viewport.current);
       scene.current.setOnRender((proj) => setProjections(proj));
+      scene.current.setOnSelect((id) => {
+        if (!id) return;
+        setSelectedSatId(id);
+        setIsInspectorOpen(true);
+      });
       scene.current.setAutoRotate(autoRotate);
       setSceneError(null);
     } catch (err) {
@@ -137,6 +146,28 @@ export function SceneShell({ snapshot, status, statusError, onExit }: SceneShell
   useEffect(() => {
     scene.current?.setAutoRotate(autoRotate);
   }, [autoRotate]);
+
+  // Mirror the selection into the 3D scene (highlight only, never simulation state)
+  useEffect(() => {
+    scene.current?.setSelection(selectedSatId);
+  }, [selectedSatId]);
+
+  const satellites = snapshot.kind === "ready" ? snapshot.snapshot.satellites : [];
+
+  const handleSelectSatellite = (id: string) => {
+    setSelectedSatId(id);
+    setIsInspectorOpen(true);
+  };
+
+  const handleFocusSatellite = (id: string) => {
+    if (viewMode === "2d") {
+      setViewMode("3d");
+      // Give the viewport one frame to become visible before moving the camera.
+      window.setTimeout(() => scene.current?.focusSatellite(id), 60);
+      return;
+    }
+    scene.current?.focusSatellite(id);
+  };
 
   // Clock Actions
   const handlePause = async () => {
@@ -173,14 +204,6 @@ export function SceneShell({ snapshot, status, statusError, onExit }: SceneShell
   const simSeconds = currentClock?.simulation_time_s ?? 0;
   const epochUtc = currentClock?.epoch_utc;
   const formattedTimestamp = useMemo(() => formatSimulatedTime(epochUtc, simSeconds), [epochUtc, simSeconds]);
-
-  // Anomaly count
-  const anomalyCount = useMemo(() => {
-    if (snapshot.kind !== "ready") return 1;
-    return snapshot.snapshot.satellites.filter(
-      (s) => s.id.toLowerCase().includes("02") || s.id.toLowerCase().includes("anomaly")
-    ).length;
-  }, [snapshot]);
 
   return (
     <section className="scene-shell" data-testid="scene-shell" aria-label="Orbital viewport">
@@ -249,13 +272,11 @@ export function SceneShell({ snapshot, status, statusError, onExit }: SceneShell
 
           <button
             type="button"
-            className={`rail-item ${activeTab === "sensors" ? "rail-item--active" : ""}`}
-            onClick={() => {
-              setActiveTab("sensors");
-              setShowOverlays((v) => !v);
-            }}
-            title="Sensor Coverage & Graticules"
-            aria-label="Sensor Coverage"
+            className={`rail-item ${showOverlays ? "rail-item--active" : ""}`}
+            aria-pressed={showOverlays}
+            onClick={() => setShowOverlays((v) => !v)}
+            title="Toggle graticule + polar reticle overlays"
+            aria-label="Toggle coordinate overlays"
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
               <circle cx="12" cy="12" r="2.5" fill="currentColor" />
@@ -265,31 +286,26 @@ export function SceneShell({ snapshot, status, statusError, onExit }: SceneShell
 
           <button
             type="button"
-            className={`rail-item ${activeTab === "anomalies" ? "rail-item--active" : ""}`}
-            onClick={() => {
-              setActiveTab("anomalies");
-              setSelectedSatId("sat-02");
-            }}
-            title="Anomalies Radar"
-            aria-label="Anomalies Radar"
+            className={`rail-item ${isInspectorOpen ? "rail-item--active" : ""}`}
+            aria-pressed={isInspectorOpen}
+            onClick={() => setIsInspectorOpen((v) => !v)}
+            title="Satellite Inspector (select by ID, orbit elements, ECI state)"
+            aria-label="Satellite Inspector"
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
-              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
-              <line x1="12" y1="9" x2="12" y2="13" />
-              <line x1="12" y1="17" x2="12.01" y2="17" />
+              <circle cx="12" cy="12" r="3" />
+              <path d="M12 2v3M12 19v3M2 12h3M19 12h3" />
+              <circle cx="12" cy="12" r="8.5" strokeDasharray="3 3" />
             </svg>
-            {anomalyCount > 0 && <span className="rail-badge">{anomalyCount}</span>}
           </button>
 
           <button
             type="button"
-            className={`rail-item ${activeTab === "telemetry" || isDrawerOpen ? "rail-item--active" : ""}`}
-            onClick={() => {
-              setIsDrawerOpen((v) => !v);
-              setActiveTab("telemetry");
-            }}
-            title="Telemetry State Inspector"
-            aria-label="Telemetry State Inspector"
+            className={`rail-item ${isDrawerOpen ? "rail-item--active" : ""}`}
+            aria-pressed={isDrawerOpen}
+            onClick={() => setIsDrawerOpen((v) => !v)}
+            title="Swarm telemetry table"
+            aria-label="Swarm telemetry table"
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
               <rect x="3" y="3" width="18" height="18" rx="2" />
@@ -361,7 +377,7 @@ export function SceneShell({ snapshot, status, statusError, onExit }: SceneShell
             .filter((p) => !p.isOccluded)
             .map((p) => {
               const isSelected = selectedSatId === p.id;
-              const isAnomaly = p.id.toLowerCase().includes("02") || p.id.toLowerCase().includes("anomaly");
+              const isAnomaly = p.id.toLowerCase().includes("anomaly");
               // Only draw leader line for selected satellite or anomaly satellite
               if (!isSelected && !isAnomaly) return null;
 
@@ -391,7 +407,7 @@ export function SceneShell({ snapshot, status, statusError, onExit }: SceneShell
           .filter((p) => !p.isOccluded)
           .map((p) => {
             const isSelected = selectedSatId === p.id;
-            const isAnomaly = p.id.toLowerCase().includes("02") || p.id.toLowerCase().includes("anomaly");
+            const isAnomaly = p.id.toLowerCase().includes("anomaly");
             const dx = p.screenX > 500 ? 60 : -190;
             const dy = -62;
 
@@ -404,7 +420,7 @@ export function SceneShell({ snapshot, status, statusError, onExit }: SceneShell
                   top: `${p.screenY + dy}px`,
                   borderColor: p.colorHex,
                 }}
-                onClick={() => setSelectedSatId(p.id)}
+                onClick={() => handleSelectSatellite(p.id)}
               >
                 <div className="callout-distance mono">Distance {p.distanceKm.toFixed(2)} km</div>
                 <div className="callout-header">
@@ -423,7 +439,21 @@ export function SceneShell({ snapshot, status, statusError, onExit }: SceneShell
           })}
       </div>
 
-      {/* 4. Telemetry Drawer (Right Slideout Inspector) */}
+      {/* 4a. Day 7: Satellite Inspector (typed, selection-driven) */}
+      {isInspectorOpen && (
+        <InspectorPanel
+          snapshot={snapshot.kind === "ready" ? snapshot.snapshot : null}
+          satellites={satellites}
+          selectedSatId={selectedSatId}
+          onSelect={handleSelectSatellite}
+          onFocus={handleFocusSatellite}
+          onClearSelection={() => setSelectedSatId(null)}
+          onClose={() => setIsInspectorOpen(false)}
+          focusAvailable={viewMode === "3d" && !sceneError}
+        />
+      )}
+
+      {/* 4b. Telemetry Drawer (Right Slideout Inspector) */}
       <aside
         className={`scene-shell__drawer ${isDrawerOpen ? "scene-shell__drawer--open" : ""}`}
         aria-label="Telemetry Data Grid"
@@ -484,7 +514,7 @@ export function SceneShell({ snapshot, status, statusError, onExit }: SceneShell
                       sat={sat}
                       color={getSatelliteColor(i)}
                       isSelected={selectedSatId === sat.id}
-                      onSelect={() => setSelectedSatId(sat.id)}
+                      onSelect={() => handleSelectSatellite(sat.id)}
                     />
                   ))}
                 </tbody>

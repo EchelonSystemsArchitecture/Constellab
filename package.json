@@ -12,7 +12,7 @@
     "test": "node scripts/test.js",
     "test:core": "node scripts/py.js -m unittest discover -s core/tests -v",
     "test:contract": "tsc -p frontend/tsconfig.test.json && node --test frontend/.test-out/contract/__tests__/contract.test.js",
-    "test:scene": "tsc -p frontend/tsconfig.test.json && node --test frontend/.test-out/scene/__tests__/scene.test.js",
+    "test:scene": "tsc -p frontend/tsconfig.test.json && node --test \"frontend/.test-out/scene/__tests__/*.test.js\"",
     "gen:contract": "node scripts/py.js scripts/gen_contract.py",
     "status": "node scripts/py.js -m constellab_core status",
     "snapshot": "node scripts/py.js -m constellab_core snapshot",

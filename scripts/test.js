@@ -21,7 +21,7 @@ const steps = [
   ["Frontend type-check", process.execPath, [tsc, "-p", "frontend", "--noEmit"]],
   ["Compile contract tests", process.execPath, [tsc, "-p", path.join("frontend", "tsconfig.test.json")]],
   ["TypeScript contract tests", process.execPath, ["--test", path.join("frontend", ".test-out", "contract", "__tests__", "contract.test.js")]],
-  ["Viewport lifecycle tests", process.execPath, ["--test", path.join("frontend", ".test-out", "scene", "__tests__", "scene.test.js")]],
+  ["Viewport lifecycle tests", process.execPath, ["--test", path.join("frontend", ".test-out", "scene", "__tests__", "*.test.js")]],
   ["Frontend build", process.execPath, [vite, "build"]],
 ];
 

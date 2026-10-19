@@ -114,7 +114,7 @@ export function GroundTrackMap({
           const colorInt = getSatelliteColor(i);
           const colorHex = `#${colorInt.toString(16).padStart(6, "0")}`;
           const isSelected = selectedSatId === sat.id;
-          const isAnomaly = sat.id.toLowerCase().includes("02") || sat.id.toLowerCase().includes("anomaly");
+          const isAnomaly = sat.id.toLowerCase().includes("anomaly");
 
           // Draw Simulated Ground Track Curve
           if (sat.orbit) {

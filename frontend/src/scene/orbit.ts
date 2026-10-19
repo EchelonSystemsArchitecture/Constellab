@@ -5,6 +5,7 @@ import {
   LineBasicMaterial,
   Mesh,
   MeshBasicMaterial,
+  RingGeometry,
   SphereGeometry,
   Vector3,
 } from "three";
@@ -79,19 +80,66 @@ export function createOrbitGeometry(orbit: OrbitElements): BufferGeometry {
   return geometry;
 }
 
+export const BRAND_COLORS = {
+  void: 0x080b14,
+  observatory: 0x101827,
+  orbitNavy: 0x1b2b4a,
+  coreBlue: 0x3d68b2,
+  ionTeal: 0x6f9b97,       // Nominal
+  paleAurora: 0xb7d8c8,
+  starlight: 0xe7e9ed,
+  spectralLilac: 0xc8bde5, // Divergent
+  solarGold: 0xf0c777,     // Caution
+  anomalyCoral: 0xff765f,  // Anomaly
+  telemetryGrey: 0x7d8598,
+  deepInk: 0x202531,
+} as const;
+
+export function getSatelliteColor(index: number): number {
+  const colors = [
+    BRAND_COLORS.ionTeal,      // Sat 0: Nominal (Teal)
+    BRAND_COLORS.anomalyCoral,  // Sat 1: Anomaly (Coral - matches True Anomaly in ref)
+    BRAND_COLORS.coreBlue,      // Sat 2: Active tracking (Core blue)
+    BRAND_COLORS.solarGold,     // Sat 3: Caution (Solar gold)
+    BRAND_COLORS.spectralLilac, // Sat 4: Divergent behavior (Lilac)
+    BRAND_COLORS.paleAurora,    // Sat 5: Pale aurora
+    BRAND_COLORS.starlight,     // Sat 6: Starlight
+  ];
+  return colors[index % colors.length];
+}
+
 export function createSatelliteVisuals(sat: SatelliteState | SatelliteConfig, color: number): SatelliteVisuals {
   const orbit = sat.orbit!;
 
+  // Luminous tactical orbit path with subtle glow opacity
   const orbitLine = new Line(
     createOrbitGeometry(orbit),
-    new LineBasicMaterial({ color, transparent: true, opacity: 0.6 }),
+    new LineBasicMaterial({
+      color,
+      transparent: true,
+      opacity: 0.72,
+    }),
   );
 
+  // Tactical aerospace satellite glyph: central sensor core + tactical reticle ring
   const satelliteMesh = new Mesh(
-    new SphereGeometry(0.02, 12, 12),
+    new SphereGeometry(0.024, 16, 16),
     new MeshBasicMaterial({ color }),
   );
 
+  // Outer aerospace telemetry diamond/bracket
+  const ringGeom = new RingGeometry(0.032, 0.042, 4);
+  const ringMat = new MeshBasicMaterial({
+    color,
+    transparent: true,
+    opacity: 0.85,
+    wireframe: true,
+  });
+  const ringMesh = new Mesh(ringGeom, ringMat);
+  ringMesh.rotation.z = Math.PI / 4; // Diamond orientation
+  satelliteMesh.add(ringMesh);
+
+  // Position at current ECI or epoch
   satelliteMesh.position.copy(
     "position_eci_km" in sat
       ? eciToScene(sat.position_eci_km)
@@ -99,18 +147,4 @@ export function createSatelliteVisuals(sat: SatelliteState | SatelliteConfig, co
   );
 
   return { orbitLine, satelliteMesh };
-}
-
-export function getSatelliteColor(index: number): number {
-  const colors = [
-    0x00d4aa,
-    0xff6b6b,
-    0x4da3ff,
-    0xffd93d,
-    0xff9f43,
-    0xa55eea,
-    0x26de81,
-    0xea8685,
-  ];
-  return colors[index % colors.length];
 }

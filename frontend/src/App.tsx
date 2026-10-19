@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { ContractError, SCHEMA_VERSION, SimulationSnapshot, parseSnapshot } from "./contract";
+import { ContractError, SimulationSnapshot, parseSnapshot } from "./contract";
 import { SceneShell } from "./scene/SceneShell";
 import { StartupScreen } from "./StartupScreen";
 
@@ -33,7 +33,13 @@ function describeFailure(err: unknown): SnapshotState {
 }
 
 export default function App() {
-  const [phase, setPhase] = useState<"startup" | "app">("startup");
+  const [phase, setPhase] = useState<"startup" | "app">(() => {
+    if (typeof window !== "undefined") {
+      const p = new URLSearchParams(window.location.search).get("phase");
+      if (p === "app") return "app";
+    }
+    return "startup";
+  });
   const [status, setStatus] = useState<CoreStatus | null>(null);
   const [statusError, setStatusError] = useState<string | null>(null);
   const [snapshot, setSnapshot] = useState<SnapshotState>({ kind: "loading" });
@@ -91,31 +97,15 @@ export default function App() {
   }
 
   return (
-    <div className="app">
-      <header className="app__header">
-        <span className="app__brand">
-          <img className="app__brand-mark" src="constellab-symbol.svg" alt="" />
-          ConstellaLab
-        </span>
-        <span className="app__tagline">software-only crash-test lab for satellite swarms</span>
-        <span
-          className={`app__status ${status ? "app__status--ok" : "app__status--down"}`}
-          data-testid="core-status"
-        >
-          {status
-            ? `core ${status.name} v${status.version} (schema ${status.schema_version}) — ${status.status}`
-            : statusError
-              ? `core unreachable: ${statusError}`
-              : "connecting to core…"}
-        </span>
-      </header>
-      <main className="app__main">
-        <SceneShell snapshot={snapshot} />
+    <div className="app app--tactical">
+      <main className="app__main app__main--tactical">
+        <SceneShell
+          snapshot={snapshot}
+          status={status}
+          statusError={statusError}
+          onExit={() => setPhase("startup")}
+        />
       </main>
-      <footer className="app__footer">
-        Day 5 — deterministic two-body orbits · core-owned snapshots (contract v{SCHEMA_VERSION}) · no
-        inter-satellite communication yet
-      </footer>
     </div>
   );
 }

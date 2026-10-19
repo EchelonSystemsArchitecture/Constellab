@@ -1,11 +1,9 @@
 import { CanvasTexture, RepeatWrapping, SRGBColorSpace, Texture, TextureLoader } from "three";
 import { SCENE_CONFIG } from "./config";
 
-// Real NASA Blue Marble: Next Generation (December 2004) with topography and
-// bathymetry. Verified live 2026-10-15: HTTP 200, image/jpeg, ~150KB.
-// The path is relative on purpose: the packaged desktop app loads index.html over
-// file://, where an absolute URL would resolve outside the bundle.
-export const REAL_EARTH_TEXTURE_URL = "https://assets.science.nasa.gov/dynamicimage/assets/science/esd/eo/images/bmng/bmng-topography-bathymetry/december/world.topo.bathy.200412.3x5400x2700.jpg";
+// Tactical Dark Earth texture generated from Natural Earth vector boundaries,
+// styled with deep navy/void oceans (#080B14) and glowing anomaly coral outlines (#FF765F).
+export const REAL_EARTH_TEXTURE_URL = "/earth-tactical-dark.png";
 
 // Loaded on demand, never at module init, so importing this module stays safe in
 // Node.js (the scene tests) where there is no DOM.

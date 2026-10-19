@@ -10,6 +10,19 @@ import { SCENE_CONFIG } from "./config";
 import { createEarthWorld } from "./EarthWorld";
 import { BROWSER_RUNTIME, startViewport } from "./lifecycle";
 import { createSatelliteVisuals, eciToScene, getSatelliteColor } from "./orbit";
+import { createTacticalEarthOverlays } from "./tacticalOverlays";
+
+export interface SatelliteProjection {
+  id: string;
+  screenX: number;
+  screenY: number;
+  isOccluded: boolean;
+  distanceKm: number;
+  altitudeKm: number;
+  velocityKms: number;
+  colorHex: string;
+  index: number;
+}
 
 export class EarthScene {
   private readonly renderer: WebGLRenderer;
@@ -17,13 +30,19 @@ export class EarthScene {
   private readonly controls: OrbitControls;
   private readonly stopViewport: () => void;
   private readonly worldScene: Scene;
+  private readonly earthMesh: Mesh;
   private readonly satelliteLines: Line[] = [];
   private readonly satelliteMeshes: Map<string, { mesh: Mesh; index: number }> = new Map();
+  private readonly overlays: { group: import("three").Group; dispose: () => void };
+  private currentSnapshot: SimulationSnapshot | null = null;
   private disposed = false;
+  private onRenderCallback?: (projections: SatelliteProjection[]) => void;
+  private autoRotate = true;
+  private rotationSpeed = 0.0006;
 
   constructor(host: HTMLElement, assets: SceneAssets = REAL_EARTH_ASSETS) {
     const config = SCENE_CONFIG;
-    this.renderer = new WebGLRenderer({ antialias: true });
+    this.renderer = new WebGLRenderer({ antialias: true, alpha: true });
     this.renderer.toneMapping = ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = config.renderer.exposure;
     this.renderer.domElement.setAttribute("aria-label", "3D Earth with satellite orbits. Drag to orbit, scroll to zoom.");
@@ -47,6 +66,12 @@ export class EarthScene {
       throw error;
     }
     this.worldScene = world.scene;
+    this.earthMesh = world.earth;
+
+    // Tactical Aerospace overlays: polar reticles, coordinate rings, LEO altitude circle
+    this.overlays = createTacticalEarthOverlays();
+    this.worldScene.add(this.overlays.group);
+
     host.appendChild(this.renderer.domElement);
     this.stopViewport = startViewport(host, {
       resize: (width, height, pixelRatio) => {
@@ -56,11 +81,21 @@ export class EarthScene {
         this.renderer.setSize(width, height);
       },
       render: () => {
+        if (this.autoRotate) {
+          // The mesh is tilted so its local +Y (the sphere's pole) is scene +Z.
+          // Spinning the local Y axis therefore turns the globe west-to-east
+          // about the north pole; rotating Z would tumble it sideways instead.
+          this.earthMesh.rotation.y += this.rotationSpeed;
+        }
         this.controls.update();
         this.renderer.render(this.worldScene, this.camera);
+        if (this.onRenderCallback) {
+          this.onRenderCallback(this.calculateProjections());
+        }
       },
       dispose: () => {
         this.controls.dispose();
+        this.overlays.dispose();
         world.dispose();
         this.renderer.dispose();
         this.renderer.forceContextLoss();
@@ -69,8 +104,90 @@ export class EarthScene {
     }, BROWSER_RUNTIME, config.renderer.maxPixelRatio);
   }
 
+  setOnRender(callback?: (projections: SatelliteProjection[]) => void) {
+    this.onRenderCallback = callback;
+  }
+
+  setOverlaysVisible(visible: boolean) {
+    this.overlays.group.visible = visible;
+  }
+
+  setAutoRotate(enabled: boolean) {
+    this.autoRotate = enabled;
+  }
+
+  setRotationSpeed(speed: number) {
+    this.rotationSpeed = speed;
+  }
+
+  isAutoRotating(): boolean {
+    return this.autoRotate;
+  }
+
+  private calculateProjections(): SatelliteProjection[] {
+    if (!this.currentSnapshot || !this.renderer.domElement) return [];
+    const width = this.renderer.domElement.clientWidth;
+    const height = this.renderer.domElement.clientHeight;
+    if (width === 0 || height === 0) return [];
+
+    const camPos = this.camera.position;
+    const earthRadius = SCENE_CONFIG.earth.radius;
+    const kmPerUnit = SCENE_CONFIG.units.kmPerSceneUnit;
+
+    const projections: SatelliteProjection[] = [];
+
+    this.currentSnapshot.satellites.forEach((sat, i) => {
+      const entry = this.satelliteMeshes.get(sat.id);
+      if (!entry) return;
+
+      const satPos = entry.mesh.position;
+
+      // Check occlusion by Earth sphere at (0,0,0)
+      const ray = satPos.clone().sub(camPos);
+      const rayLen = ray.length();
+      ray.normalize();
+      const dot = -camPos.dot(ray);
+      let isOccluded = false;
+      if (dot > 0 && dot < rayLen) {
+        const perpDistSq = camPos.lengthSq() - dot * dot;
+        if (perpDistSq < earthRadius * earthRadius) {
+          isOccluded = true;
+        }
+      }
+
+      const projected = satPos.clone().project(this.camera);
+      if (projected.z > 1.0) isOccluded = true; // Behind camera
+
+      const screenX = (projected.x * 0.5 + 0.5) * width;
+      const screenY = (-projected.y * 0.5 + 0.5) * height;
+
+      const satRadiusKm = satPos.length() * kmPerUnit;
+      const altitudeKm = Math.max(0, satRadiusKm - kmPerUnit);
+      const [vx, vy, vz] = sat.velocity_eci_km_s;
+      const velocityKms = Math.hypot(vx, vy, vz);
+
+      const color = getSatelliteColor(i);
+      const colorHex = `#${color.toString(16).padStart(6, "0")}`;
+
+      projections.push({
+        id: sat.id,
+        screenX,
+        screenY,
+        isOccluded,
+        distanceKm: satRadiusKm,
+        altitudeKm,
+        velocityKms,
+        colorHex,
+        index: i,
+      });
+    });
+
+    return projections;
+  }
+
   setSnapshot(snapshot: SimulationSnapshot | null) {
     if (this.disposed) return;
+    this.currentSnapshot = snapshot;
     const canvas = this.renderer.domElement;
     if (snapshot) {
       canvas.dataset.scenarioId = snapshot.scenario_id;

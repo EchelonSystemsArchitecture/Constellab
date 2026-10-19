@@ -5,6 +5,7 @@ import type { SatelliteProjection } from "./EarthScene";
 import { EarthScene } from "./EarthScene";
 import { GroundTrackMap } from "./GroundTrackMap";
 import { InspectorPanel } from "./InspectorPanel";
+import { ScenarioCatalog } from "../scenario/ScenarioCatalog";
 import { getSatelliteColor } from "./orbit";
 import { SCENE_CONFIG } from "./config";
 
@@ -106,6 +107,7 @@ export function SceneShell({ snapshot, status, statusError, onExit }: SceneShell
   const [isInspectorOpen, setIsInspectorOpen] = useState(false);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isScenarioOpen, setIsScenarioOpen] = useState(false);
   const [autoRotate] = useState(true);
   const [showOverlays, setShowOverlays] = useState(true);
   const [showCallouts] = useState(true);
@@ -153,6 +155,13 @@ export function SceneShell({ snapshot, status, statusError, onExit }: SceneShell
   }, [selectedSatId]);
 
   const satellites = snapshot.kind === "ready" ? snapshot.snapshot.satellites : [];
+  const activeScenarioId = snapshot.kind === "ready" ? snapshot.snapshot.scenario_id : null;
+
+  // A scenario switch replaces the world; a selection from the old world must not
+  // survive into the new one.
+  useEffect(() => {
+    setSelectedSatId(null);
+  }, [activeScenarioId]);
 
   const handleSelectSatellite = (id: string) => {
     setSelectedSatId(id);
@@ -197,10 +206,11 @@ export function SceneShell({ snapshot, status, statusError, onExit }: SceneShell
     if (newClock) setClockState(newClock);
   };
 
-  const isPaused = clockState?.paused ?? (snapshot.kind === "ready" && snapshot.snapshot.clock.paused);
-  const displayTimeWarp = clockState?.time_scale ?? timeWarp;
-
   const currentClock = snapshot.kind === "ready" ? snapshot.snapshot.clock : null;
+  const isPaused = currentClock?.paused ?? clockState?.paused ?? true;
+  // The snapshot clock is canonical (scenario loads carry their own time_scale);
+  // local action state is only a fallback while a request is in flight.
+  const displayTimeWarp = currentClock?.time_scale ?? clockState?.time_scale ?? timeWarp;
   const simSeconds = currentClock?.simulation_time_s ?? 0;
   const epochUtc = currentClock?.epoch_utc;
   const formattedTimestamp = useMemo(() => formatSimulatedTime(epochUtc, simSeconds), [epochUtc, simSeconds]);
@@ -364,9 +374,16 @@ export function SceneShell({ snapshot, status, statusError, onExit }: SceneShell
                 : "connecting to core…"}
           </span>
           <span className="topbar-sep">·</span>
-          <span className="topbar-scenario mono">
+          <button
+            type="button"
+            className="topbar-scenario mono"
+            onClick={() => setIsScenarioOpen(true)}
+            title="Open scenario catalog"
+            aria-haspopup="dialog"
+          >
             {snapshot.kind === "ready" ? `SCENARIO: ${snapshot.snapshot.scenario_id.toUpperCase()}` : "LOADING"}
-          </span>
+            <span className="topbar-scenario__chevron" aria-hidden="true">▾</span>
+          </button>
         </div>
       </header>
 
@@ -376,10 +393,9 @@ export function SceneShell({ snapshot, status, statusError, onExit }: SceneShell
           {projections
             .filter((p) => !p.isOccluded)
             .map((p) => {
-              const isSelected = selectedSatId === p.id;
-              const isAnomaly = p.id.toLowerCase().includes("anomaly");
-              // Only draw leader line for selected satellite or anomaly satellite
-              if (!isSelected && !isAnomaly) return null;
+              // Only the selected satellite gets a leader line: a large fleet would
+              // otherwise stack dozens of overlapping badges over the globe.
+              if (selectedSatId !== p.id) return null;
 
               const dx = p.screenX > 500 ? 55 : -55;
               const dy = -42;
@@ -404,9 +420,9 @@ export function SceneShell({ snapshot, status, statusError, onExit }: SceneShell
 
         {/* HTML Tactical Callout Badges */}
         {projections
-          .filter((p) => !p.isOccluded)
+          .filter((p) => !p.isOccluded && p.id === selectedSatId)
           .map((p) => {
-            const isSelected = selectedSatId === p.id;
+            const isSelected = true;
             const isAnomaly = p.id.toLowerCase().includes("anomaly");
             const dx = p.screenX > 500 ? 60 : -190;
             const dy = -62;
@@ -683,6 +699,44 @@ export function SceneShell({ snapshot, status, statusError, onExit }: SceneShell
           </div>
         </div>
       </footer>
+
+      {/* Day 8: in-app scenario catalog. The core validates and loads; the renderer
+          just resumes polling the snapshot stream from the new scenario. */}
+      {isScenarioOpen && (
+        <div
+          className="startup-modal-backdrop"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Scenario catalog"
+          onClick={() => setIsScenarioOpen(false)}
+        >
+          <div className="startup-modal" onClick={(event) => event.stopPropagation()}>
+            <div className="startup-modal__header">
+              <div className="startup-modal__title-group">
+                <span className="drawer-dot" />
+                <h2 className="startup-modal__title">SCENARIO CATALOG</h2>
+              </div>
+              <button
+                type="button"
+                className="startup-modal__close-btn"
+                onClick={() => setIsScenarioOpen(false)}
+                aria-label="Close scenario catalog"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="startup-modal__body">
+              <ScenarioCatalog
+                activeScenarioId={activeScenarioId}
+                onLoaded={() => {
+                  setSelectedSatId(null);
+                  setIsScenarioOpen(false);
+                }}
+              />
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* WebGL Unavailable Fallback */}
       {sceneError && (

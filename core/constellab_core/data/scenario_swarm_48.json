@@ -1,0 +1,586 @@
+{
+  "schema_version": "1.0.0",
+  "scenario_id": "swarm-48",
+  "name": "Walker-48 LEO constellation",
+  "seed": 42,
+  "epoch_utc": "2026-10-12T00:00:00Z",
+  "time_scale": 60,
+  "satellites": [
+    {
+      "id": "sat-swarm-01",
+      "name": "Swarm 01",
+      "orbit": {
+        "semi_major_axis_km": 6928.137,
+        "eccentricity": 0.0008,
+        "inclination_deg": 53,
+        "raan_deg": 0,
+        "argument_of_perigee_deg": 0,
+        "true_anomaly_deg": 0
+      }
+    },
+    {
+      "id": "sat-swarm-02",
+      "name": "Swarm 02",
+      "orbit": {
+        "semi_major_axis_km": 6928.137,
+        "eccentricity": 0.0008,
+        "inclination_deg": 53,
+        "raan_deg": 0,
+        "argument_of_perigee_deg": 0,
+        "true_anomaly_deg": 45
+      }
+    },
+    {
+      "id": "sat-swarm-03",
+      "name": "Swarm 03",
+      "orbit": {
+        "semi_major_axis_km": 6928.137,
+        "eccentricity": 0.0008,
+        "inclination_deg": 53,
+        "raan_deg": 0,
+        "argument_of_perigee_deg": 0,
+        "true_anomaly_deg": 90
+      }
+    },
+    {
+      "id": "sat-swarm-04",
+      "name": "Swarm 04",
+      "orbit": {
+        "semi_major_axis_km": 6928.137,
+        "eccentricity": 0.0008,
+        "inclination_deg": 53,
+        "raan_deg": 0,
+        "argument_of_perigee_deg": 0,
+        "true_anomaly_deg": 135
+      }
+    },
+    {
+      "id": "sat-swarm-05",
+      "name": "Swarm 05",
+      "orbit": {
+        "semi_major_axis_km": 6928.137,
+        "eccentricity": 0.0008,
+        "inclination_deg": 53,
+        "raan_deg": 0,
+        "argument_of_perigee_deg": 0,
+        "true_anomaly_deg": 180
+      }
+    },
+    {
+      "id": "sat-swarm-06",
+      "name": "Swarm 06",
+      "orbit": {
+        "semi_major_axis_km": 6928.137,
+        "eccentricity": 0.0008,
+        "inclination_deg": 53,
+        "raan_deg": 0,
+        "argument_of_perigee_deg": 0,
+        "true_anomaly_deg": 225
+      }
+    },
+    {
+      "id": "sat-swarm-07",
+      "name": "Swarm 07",
+      "orbit": {
+        "semi_major_axis_km": 6928.137,
+        "eccentricity": 0.0008,
+        "inclination_deg": 53,
+        "raan_deg": 0,
+        "argument_of_perigee_deg": 0,
+        "true_anomaly_deg": 270
+      }
+    },
+    {
+      "id": "sat-swarm-08",
+      "name": "Swarm 08",
+      "orbit": {
+        "semi_major_axis_km": 6928.137,
+        "eccentricity": 0.0008,
+        "inclination_deg": 53,
+        "raan_deg": 0,
+        "argument_of_perigee_deg": 0,
+        "true_anomaly_deg": 315
+      }
+    },
+    {
+      "id": "sat-swarm-09",
+      "name": "Swarm 09",
+      "orbit": {
+        "semi_major_axis_km": 6928.137,
+        "eccentricity": 0.0008,
+        "inclination_deg": 53,
+        "raan_deg": 60,
+        "argument_of_perigee_deg": 0,
+        "true_anomaly_deg": 7.5
+      }
+    },
+    {
+      "id": "sat-swarm-10",
+      "name": "Swarm 10",
+      "orbit": {
+        "semi_major_axis_km": 6928.137,
+        "eccentricity": 0.0008,
+        "inclination_deg": 53,
+        "raan_deg": 60,
+        "argument_of_perigee_deg": 0,
+        "true_anomaly_deg": 52.5
+      }
+    },
+    {
+      "id": "sat-swarm-11",
+      "name": "Swarm 11",
+      "orbit": {
+        "semi_major_axis_km": 6928.137,
+        "eccentricity": 0.0008,
+        "inclination_deg": 53,
+        "raan_deg": 60,
+        "argument_of_perigee_deg": 0,
+        "true_anomaly_deg": 97.5
+      }
+    },
+    {
+      "id": "sat-swarm-12",
+      "name": "Swarm 12",
+      "orbit": {
+        "semi_major_axis_km": 6928.137,
+        "eccentricity": 0.0008,
+        "inclination_deg": 53,
+        "raan_deg": 60,
+        "argument_of_perigee_deg": 0,
+        "true_anomaly_deg": 142.5
+      }
+    },
+    {
+      "id": "sat-swarm-13",
+      "name": "Swarm 13",
+      "orbit": {
+        "semi_major_axis_km": 6928.137,
+        "eccentricity": 0.0008,
+        "inclination_deg": 53,
+        "raan_deg": 60,
+        "argument_of_perigee_deg": 0,
+        "true_anomaly_deg": 187.5
+      }
+    },
+    {
+      "id": "sat-swarm-14",
+      "name": "Swarm 14",
+      "orbit": {
+        "semi_major_axis_km": 6928.137,
+        "eccentricity": 0.0008,
+        "inclination_deg": 53,
+        "raan_deg": 60,
+        "argument_of_perigee_deg": 0,
+        "true_anomaly_deg": 232.5
+      }
+    },
+    {
+      "id": "sat-swarm-15",
+      "name": "Swarm 15",
+      "orbit": {
+        "semi_major_axis_km": 6928.137,
+        "eccentricity": 0.0008,
+        "inclination_deg": 53,
+        "raan_deg": 60,
+        "argument_of_perigee_deg": 0,
+        "true_anomaly_deg": 277.5
+      }
+    },
+    {
+      "id": "sat-swarm-16",
+      "name": "Swarm 16",
+      "orbit": {
+        "semi_major_axis_km": 6928.137,
+        "eccentricity": 0.0008,
+        "inclination_deg": 53,
+        "raan_deg": 60,
+        "argument_of_perigee_deg": 0,
+        "true_anomaly_deg": 322.5
+      }
+    },
+    {
+      "id": "sat-swarm-17",
+      "name": "Swarm 17",
+      "orbit": {
+        "semi_major_axis_km": 6928.137,
+        "eccentricity": 0.0008,
+        "inclination_deg": 53,
+        "raan_deg": 120,
+        "argument_of_perigee_deg": 0,
+        "true_anomaly_deg": 15
+      }
+    },
+    {
+      "id": "sat-swarm-18",
+      "name": "Swarm 18",
+      "orbit": {
+        "semi_major_axis_km": 6928.137,
+        "eccentricity": 0.0008,
+        "inclination_deg": 53,
+        "raan_deg": 120,
+        "argument_of_perigee_deg": 0,
+        "true_anomaly_deg": 60
+      }
+    },
+    {
+      "id": "sat-swarm-19",
+      "name": "Swarm 19",
+      "orbit": {
+        "semi_major_axis_km": 6928.137,
+        "eccentricity": 0.0008,
+        "inclination_deg": 53,
+        "raan_deg": 120,
+        "argument_of_perigee_deg": 0,
+        "true_anomaly_deg": 105
+      }
+    },
+    {
+      "id": "sat-swarm-20",
+      "name": "Swarm 20",
+      "orbit": {
+        "semi_major_axis_km": 6928.137,
+        "eccentricity": 0.0008,
+        "inclination_deg": 53,
+        "raan_deg": 120,
+        "argument_of_perigee_deg": 0,
+        "true_anomaly_deg": 150
+      }
+    },
+    {
+      "id": "sat-swarm-21",
+      "name": "Swarm 21",
+      "orbit": {
+        "semi_major_axis_km": 6928.137,
+        "eccentricity": 0.0008,
+        "inclination_deg": 53,
+        "raan_deg": 120,
+        "argument_of_perigee_deg": 0,
+        "true_anomaly_deg": 195
+      }
+    },
+    {
+      "id": "sat-swarm-22",
+      "name": "Swarm 22",
+      "orbit": {
+        "semi_major_axis_km": 6928.137,
+        "eccentricity": 0.0008,
+        "inclination_deg": 53,
+        "raan_deg": 120,
+        "argument_of_perigee_deg": 0,
+        "true_anomaly_deg": 240
+      }
+    },
+    {
+      "id": "sat-swarm-23",
+      "name": "Swarm 23",
+      "orbit": {
+        "semi_major_axis_km": 6928.137,
+        "eccentricity": 0.0008,
+        "inclination_deg": 53,
+        "raan_deg": 120,
+        "argument_of_perigee_deg": 0,
+        "true_anomaly_deg": 285
+      }
+    },
+    {
+      "id": "sat-swarm-24",
+      "name": "Swarm 24",
+      "orbit": {
+        "semi_major_axis_km": 6928.137,
+        "eccentricity": 0.0008,
+        "inclination_deg": 53,
+        "raan_deg": 120,
+        "argument_of_perigee_deg": 0,
+        "true_anomaly_deg": 330
+      }
+    },
+    {
+      "id": "sat-swarm-25",
+      "name": "Swarm 25",
+      "orbit": {
+        "semi_major_axis_km": 6928.137,
+        "eccentricity": 0.0008,
+        "inclination_deg": 53,
+        "raan_deg": 180,
+        "argument_of_perigee_deg": 0,
+        "true_anomaly_deg": 22.5
+      }
+    },
+    {
+      "id": "sat-swarm-26",
+      "name": "Swarm 26",
+      "orbit": {
+        "semi_major_axis_km": 6928.137,
+        "eccentricity": 0.0008,
+        "inclination_deg": 53,
+        "raan_deg": 180,
+        "argument_of_perigee_deg": 0,
+        "true_anomaly_deg": 67.5
+      }
+    },
+    {
+      "id": "sat-swarm-27",
+      "name": "Swarm 27",
+      "orbit": {
+        "semi_major_axis_km": 6928.137,
+        "eccentricity": 0.0008,
+        "inclination_deg": 53,
+        "raan_deg": 180,
+        "argument_of_perigee_deg": 0,
+        "true_anomaly_deg": 112.5
+      }
+    },
+    {
+      "id": "sat-swarm-28",
+      "name": "Swarm 28",
+      "orbit": {
+        "semi_major_axis_km": 6928.137,
+        "eccentricity": 0.0008,
+        "inclination_deg": 53,
+        "raan_deg": 180,
+        "argument_of_perigee_deg": 0,
+        "true_anomaly_deg": 157.5
+      }
+    },
+    {
+      "id": "sat-swarm-29",
+      "name": "Swarm 29",
+      "orbit": {
+        "semi_major_axis_km": 6928.137,
+        "eccentricity": 0.0008,
+        "inclination_deg": 53,
+        "raan_deg": 180,
+        "argument_of_perigee_deg": 0,
+        "true_anomaly_deg": 202.5
+      }
+    },
+    {
+      "id": "sat-swarm-30",
+      "name": "Swarm 30",
+      "orbit": {
+        "semi_major_axis_km": 6928.137,
+        "eccentricity": 0.0008,
+        "inclination_deg": 53,
+        "raan_deg": 180,
+        "argument_of_perigee_deg": 0,
+        "true_anomaly_deg": 247.5
+      }
+    },
+    {
+      "id": "sat-swarm-31",
+      "name": "Swarm 31",
+      "orbit": {
+        "semi_major_axis_km": 6928.137,
+        "eccentricity": 0.0008,
+        "inclination_deg": 53,
+        "raan_deg": 180,
+        "argument_of_perigee_deg": 0,
+        "true_anomaly_deg": 292.5
+      }
+    },
+    {
+      "id": "sat-swarm-32",
+      "name": "Swarm 32",
+      "orbit": {
+        "semi_major_axis_km": 6928.137,
+        "eccentricity": 0.0008,
+        "inclination_deg": 53,
+        "raan_deg": 180,
+        "argument_of_perigee_deg": 0,
+        "true_anomaly_deg": 337.5
+      }
+    },
+    {
+      "id": "sat-swarm-33",
+      "name": "Swarm 33",
+      "orbit": {
+        "semi_major_axis_km": 6928.137,
+        "eccentricity": 0.0008,
+        "inclination_deg": 53,
+        "raan_deg": 240,
+        "argument_of_perigee_deg": 0,
+        "true_anomaly_deg": 30
+      }
+    },
+    {
+      "id": "sat-swarm-34",
+      "name": "Swarm 34",
+      "orbit": {
+        "semi_major_axis_km": 6928.137,
+        "eccentricity": 0.0008,
+        "inclination_deg": 53,
+        "raan_deg": 240,
+        "argument_of_perigee_deg": 0,
+        "true_anomaly_deg": 75
+      }
+    },
+    {
+      "id": "sat-swarm-35",
+      "name": "Swarm 35",
+      "orbit": {
+        "semi_major_axis_km": 6928.137,
+        "eccentricity": 0.0008,
+        "inclination_deg": 53,
+        "raan_deg": 240,
+        "argument_of_perigee_deg": 0,
+        "true_anomaly_deg": 120
+      }
+    },
+    {
+      "id": "sat-swarm-36",
+      "name": "Swarm 36",
+      "orbit": {
+        "semi_major_axis_km": 6928.137,
+        "eccentricity": 0.0008,
+        "inclination_deg": 53,
+        "raan_deg": 240,
+        "argument_of_perigee_deg": 0,
+        "true_anomaly_deg": 165
+      }
+    },
+    {
+      "id": "sat-swarm-37",
+      "name": "Swarm 37",
+      "orbit": {
+        "semi_major_axis_km": 6928.137,
+        "eccentricity": 0.0008,
+        "inclination_deg": 53,
+        "raan_deg": 240,
+        "argument_of_perigee_deg": 0,
+        "true_anomaly_deg": 210
+      }
+    },
+    {
+      "id": "sat-swarm-38",
+      "name": "Swarm 38",
+      "orbit": {
+        "semi_major_axis_km": 6928.137,
+        "eccentricity": 0.0008,
+        "inclination_deg": 53,
+        "raan_deg": 240,
+        "argument_of_perigee_deg": 0,
+        "true_anomaly_deg": 255
+      }
+    },
+    {
+      "id": "sat-swarm-39",
+      "name": "Swarm 39",
+      "orbit": {
+        "semi_major_axis_km": 6928.137,
+        "eccentricity": 0.0008,
+        "inclination_deg": 53,
+        "raan_deg": 240,
+        "argument_of_perigee_deg": 0,
+        "true_anomaly_deg": 300
+      }
+    },
+    {
+      "id": "sat-swarm-40",
+      "name": "Swarm 40",
+      "orbit": {
+        "semi_major_axis_km": 6928.137,
+        "eccentricity": 0.0008,
+        "inclination_deg": 53,
+        "raan_deg": 240,
+        "argument_of_perigee_deg": 0,
+        "true_anomaly_deg": 345
+      }
+    },
+    {
+      "id": "sat-swarm-41",
+      "name": "Swarm 41",
+      "orbit": {
+        "semi_major_axis_km": 6928.137,
+        "eccentricity": 0.0008,
+        "inclination_deg": 53,
+        "raan_deg": 300,
+        "argument_of_perigee_deg": 0,
+        "true_anomaly_deg": 37.5
+      }
+    },
+    {
+      "id": "sat-swarm-42",
+      "name": "Swarm 42",
+      "orbit": {
+        "semi_major_axis_km": 6928.137,
+        "eccentricity": 0.0008,
+        "inclination_deg": 53,
+        "raan_deg": 300,
+        "argument_of_perigee_deg": 0,
+        "true_anomaly_deg": 82.5
+      }
+    },
+    {
+      "id": "sat-swarm-43",
+      "name": "Swarm 43",
+      "orbit": {
+        "semi_major_axis_km": 6928.137,
+        "eccentricity": 0.0008,
+        "inclination_deg": 53,
+        "raan_deg": 300,
+        "argument_of_perigee_deg": 0,
+        "true_anomaly_deg": 127.5
+      }
+    },
+    {
+      "id": "sat-swarm-44",
+      "name": "Swarm 44",
+      "orbit": {
+        "semi_major_axis_km": 6928.137,
+        "eccentricity": 0.0008,
+        "inclination_deg": 53,
+        "raan_deg": 300,
+        "argument_of_perigee_deg": 0,
+        "true_anomaly_deg": 172.5
+      }
+    },
+    {
+      "id": "sat-swarm-45",
+      "name": "Swarm 45",
+      "orbit": {
+        "semi_major_axis_km": 6928.137,
+        "eccentricity": 0.0008,
+        "inclination_deg": 53,
+        "raan_deg": 300,
+        "argument_of_perigee_deg": 0,
+        "true_anomaly_deg": 217.5
+      }
+    },
+    {
+      "id": "sat-swarm-46",
+      "name": "Swarm 46",
+      "orbit": {
+        "semi_major_axis_km": 6928.137,
+        "eccentricity": 0.0008,
+        "inclination_deg": 53,
+        "raan_deg": 300,
+        "argument_of_perigee_deg": 0,
+        "true_anomaly_deg": 262.5
+      }
+    },
+    {
+      "id": "sat-swarm-47",
+      "name": "Swarm 47",
+      "orbit": {
+        "semi_major_axis_km": 6928.137,
+        "eccentricity": 0.0008,
+        "inclination_deg": 53,
+        "raan_deg": 300,
+        "argument_of_perigee_deg": 0,
+        "true_anomaly_deg": 307.5
+      }
+    },
+    {
+      "id": "sat-swarm-48",
+      "name": "Swarm 48",
+      "orbit": {
+        "semi_major_axis_km": 6928.137,
+        "eccentricity": 0.0008,
+        "inclination_deg": 53,
+        "raan_deg": 300,
+        "argument_of_perigee_deg": 0,
+        "true_anomaly_deg": 352.5
+      }
+    }
+  ]
+}

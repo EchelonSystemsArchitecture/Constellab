@@ -16,7 +16,14 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from typing import Any
 
 from . import SCHEMA_VERSION, __version__
-from .config import MAX_CONFIG_BYTES, ConfigError, builtin_scenario, validate_config_bytes
+from .config import (
+    MAX_CONFIG_BYTES,
+    BUILTIN_SCENARIOS,
+    ConfigError,
+    builtin_scenario,
+    scenario_catalog,
+    validate_config_bytes,
+)
 from .contract import SCHEMA, ContractError, SimulationClock, SimulationConfig
 from .orbit import initial_snapshot, snapshot_at_time
 
@@ -25,6 +32,8 @@ ROUTES = {
     ("GET", "/api/health"): "health",
     ("GET", "/api/contract"): "contract",
     ("GET", "/api/scenario"): "scenario",
+    ("GET", "/api/scenarios"): "scenarios",
+    ("POST", "/api/scenario"): "scenario_load",
     ("GET", "/api/snapshot"): "snapshot",
     ("GET", "/api/clock"): "clock_get",
     ("POST", "/api/clock/pause"): "clock_pause",
@@ -122,6 +131,8 @@ class CoreHandler(BaseHTTPRequestHandler):
             self._send(200, SCHEMA)
         elif route == "scenario":
             self._send(200, self.scenario.to_dict())
+        elif route == "scenarios":
+            self._send(200, {"scenarios": scenario_catalog(), "active": self.scenario.scenario_id})
         elif route == "snapshot":
             clock = self.clock
             snap = snapshot_at_time(self.scenario, clock.simulation_time_s, clock)
@@ -133,6 +144,9 @@ class CoreHandler(BaseHTTPRequestHandler):
 
     def do_POST(self) -> None:  # noqa: N802 (stdlib naming)
         route = self._route("POST")
+        if route == "scenario_load":
+            self._load_scenario()
+            return
         if route in ("validate", "snapshot_for_config"):
             data = self._read_body()
             if data is None:
@@ -218,6 +232,59 @@ class CoreHandler(BaseHTTPRequestHandler):
             return
 
         self._not_found()
+
+    def _load_scenario(self) -> None:
+        """Load a built-in scenario by key, or a validated config body.
+
+        Body forms: ``{"key": "swarm-48"}`` or ``{"config": {...}}``. The config
+        path goes through the same contract validation as ``/api/config/validate``,
+        then replaces the scenario and restarts the clock at t=0 (paused=false,
+        the scenario's own time_scale).
+        """
+        data = self._read_body()
+        if data is None:
+            return
+        try:
+            payload = json.loads(data) if data else {}
+        except json.JSONDecodeError as exc:
+            self._send(400, {"error": "invalid_json", "message": str(exc)})
+            return
+        if not isinstance(payload, dict):
+            self._send(400, {"error": "invalid_body", "message": "expected a JSON object"})
+            return
+
+        try:
+            if "config" in payload:
+                config = SimulationConfig.from_dict(validate_config_bytes(
+                    json.dumps(payload["config"]).encode("utf-8")
+                ))
+                source = "inline"
+            else:
+                key = payload.get("key", payload.get("name"))
+                if not isinstance(key, str) or not key:
+                    self._send(400, {"error": "missing_scenario_key",
+                                     "available": sorted(BUILTIN_SCENARIOS)})
+                    return
+                if key not in BUILTIN_SCENARIOS:
+                    self._send(404, {"error": "unknown_scenario", "key": key,
+                                     "available": sorted(BUILTIN_SCENARIOS)})
+                    return
+                config = builtin_scenario(key)
+                source = key
+        except ConfigError as exc:
+            self._send(422, {"valid": False, "errors": exc.errors})
+            return
+
+        with self.server._clock_lock:
+            self.server.scenario = config
+            clock = running_clock(config)
+            self.server.clock = clock
+
+        self._send(200, {
+            "scenario": config.to_dict(),
+            "clock": clock.to_dict(),
+            "source": source,
+        })
 
 
 class CoreServer(ThreadingHTTPServer):

@@ -19,6 +19,7 @@ DATA_DIR = Path(__file__).with_name("data")
 BUILTIN_SCENARIOS = {
     "empty": DATA_DIR / "scenario_empty.json",
     "visual-orbit-demo": DATA_DIR / "scenario_four_satellites.json",
+    "swarm-48": DATA_DIR / "scenario_swarm_48.json",
 }
 DEFAULT_SCENARIO = "visual-orbit-demo"
 
@@ -63,3 +64,23 @@ def load_config_file(path: str | Path) -> SimulationConfig:
 
 def builtin_scenario(name: str = DEFAULT_SCENARIO) -> SimulationConfig:
     return load_config_file(name)
+
+
+def scenario_catalog() -> list[dict[str, Any]]:
+    """Describe every built-in scenario for the renderer's scenario picker.
+
+    The summary is derived from the validated configuration itself, so it can not
+    drift from what ``load_config_file`` will actually start.
+    """
+    catalog = []
+    for name in BUILTIN_SCENARIOS:
+        config = builtin_scenario(name)
+        catalog.append({
+            "key": name,
+            "scenario_id": config.scenario_id,
+            "name": config.label,
+            "satellites": len(config.satellites),
+            "epoch_utc": config.epoch_utc,
+            "time_scale": config.time_scale,
+        })
+    return catalog

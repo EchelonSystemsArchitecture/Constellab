@@ -63,10 +63,25 @@ export function InspectorPanel({
         </div>
       </div>
 
-      {/* Selection chips: every configured satellite is selectable by id */}
+      {/* Selection: chips for small fleets, a typed select once badges would wrap */}
       <div className="inspector__chips" role="tablist" aria-label="Select satellite">
         {satellites.length === 0 && <span className="inspector__empty-note">NO SATELLITES IN SNAPSHOT</span>}
-        {satellites.map((sat, i) => {
+        {satellites.length > 8 && (
+          <select
+            className="inspector__select mono"
+            aria-label="Select satellite by id"
+            value={selectedSatId ?? ""}
+            onChange={(event) => {
+              if (event.target.value) onSelect(event.target.value);
+            }}
+          >
+            <option value="">SELECT SATELLITE…</option>
+            {satellites.map((sat) => (
+              <option key={sat.id} value={sat.id}>{sat.id}</option>
+            ))}
+          </select>
+        )}
+        {satellites.length <= 8 && satellites.map((sat, i) => {
           const chipColor = hex(getSatelliteColor(i));
           const active = sat.id === selectedSatId;
           return (
@@ -85,12 +100,14 @@ export function InspectorPanel({
             </button>
           );
         })}
+        {satellites.length > 8 && (
+          <span className="inspector__empty-note">{`${satellites.length} ENTITIES — USE THE SELECTOR`}</span>
+        )}
       </div>
 
       {selection.kind === "none" && (
         <div className="inspector__body inspector__body--muted">
-          No satellite selected. Click a marker in the viewport, a callout badge, or an identity
-          chip above.
+          No satellite selected. Click a marker in the viewport, or pick an entity above.
         </div>
       )}
 

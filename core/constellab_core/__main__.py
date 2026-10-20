@@ -4,10 +4,12 @@ Usage:
     python -m constellab_core status [--config PATH]
     python -m constellab_core validate PATH
     python -m constellab_core snapshot [PATH]
+    python -m constellab_core run [PATH] [--duration S] [--step S] [--out FILE]
     python -m constellab_core serve [--host HOST] [--port PORT] [--scenario PATH]
 
 PATH may be a scenario JSON file or a built-in scenario name
-(``empty``, ``visual-orbit-demo``).
+(``empty``, ``visual-orbit-demo``, ``swarm-48``).  ``run`` advances the simulation
+without starting a server or a browser, which is what batch work uses.
 
 Exit codes:
     0  success
@@ -20,10 +22,12 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+import time
 
 from . import __version__
 from .config import BUILTIN_SCENARIOS, DEFAULT_SCENARIO, ConfigError, load_config_file
-from .orbit import initial_snapshot
+from .contract import SimulationClock
+from .orbit import initial_snapshot, snapshot_at_time
 from .service import serve, status_payload
 
 
@@ -57,6 +61,62 @@ def _cmd_snapshot(args: argparse.Namespace) -> int:
     except ConfigError as exc:
         return _print_errors(exc)
     print(initial_snapshot(config).to_json(indent=2))
+    return 0
+
+
+def _cmd_run(args: argparse.Namespace) -> int:
+    """Headless simulation: emit state at a fixed cadence, no server involved."""
+    if args.step <= 0 or args.duration < 0:
+        print("step must be > 0 and duration >= 0", file=sys.stderr)
+        return 3
+    try:
+        config = load_config_file(args.path)
+    except ConfigError as exc:
+        return _print_errors(exc)
+
+    steps = int(args.duration // args.step) + 1
+    # Records describe an advancing run, not the paused epoch clock.
+    clock = SimulationClock(
+        epoch_utc=config.epoch_utc,
+        simulation_time_s=0.0,
+        time_scale=config.time_scale,
+        paused=False,
+    )
+    out = open(args.out, "w", encoding="utf-8") if args.out else sys.stdout
+    started = time.perf_counter()
+    try:
+        for index in range(steps):
+            t = index * args.step
+            snapshot = snapshot_at_time(config, t, clock)
+            record = {
+                "t": round(t, 6),
+                "scenario_id": snapshot.scenario_id,
+                "clock": snapshot.clock.to_dict(),
+                "satellites": [
+                    {
+                        "id": sat.id,
+                        "position_eci_km": list(sat.position_eci_km),
+                        "velocity_eci_km_s": list(sat.velocity_eci_km_s),
+                    }
+                    for sat in snapshot.satellites
+                ],
+            }
+            out.write(json.dumps(record, separators=(",", ":")) + "\n")
+    finally:
+        if args.out:
+            out.close()
+    elapsed = time.perf_counter() - started
+    summary = {
+        "scenario_id": config.scenario_id,
+        "satellites": len(config.satellites),
+        "steps": steps,
+        "step_s": args.step,
+        "duration_s": args.duration,
+        "wall_s": round(elapsed, 3),
+        "out": args.out,
+    }
+    # Records own stdout; the run summary goes to stderr so it stays pipeable.
+    print(json.dumps(summary), file=sys.stderr)
     return 0
 
 
@@ -96,6 +156,16 @@ def main(argv: list[str] | None = None) -> int:
     p_snapshot.add_argument("path", metavar="PATH", nargs="?", default=DEFAULT_SCENARIO,
                             help=f"scenario JSON file or built-in name ({builtin})")
     p_snapshot.set_defaults(func=_cmd_snapshot)
+
+    p_run = sub.add_parser("run", help="advance a scenario headlessly and stream state records")
+    p_run.add_argument("path", metavar="PATH", nargs="?", default=DEFAULT_SCENARIO,
+                       help=f"scenario JSON file or built-in name ({builtin})")
+    p_run.add_argument("--duration", type=float, default=600.0, metavar="SECONDS",
+                       help="simulated seconds to cover (default 600)")
+    p_run.add_argument("--step", type=float, default=10.0, metavar="SECONDS",
+                       help="simulated seconds between records (default 10)")
+    p_run.add_argument("--out", metavar="FILE", help="write newline-delimited records here")
+    p_run.set_defaults(func=_cmd_run)
 
     p_serve = sub.add_parser("serve", help="run the local core HTTP service")
     p_serve.add_argument("--host", default="127.0.0.1")

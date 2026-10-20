@@ -1,8 +1,8 @@
 <p align="center"><img src="assets/icons/icon.png" alt="ConstellaLab logo" width="120"></p>
 
-# ConstellaLab — Day 5: Deterministic Orbital Motion
+# ConstellaLab — Day 10: Canonical Simulation API
 
-Software-only crash-test lab for autonomous satellite swarms — a Three.js Earth viewport built on the versioned Python/TypeScript simulation contract. Four illustrative satellites orbit Earth from snapshots produced by the local Python core.
+Software-only crash-test lab for autonomous satellite swarms — a Three.js Earth viewport built on the versioned Python/TypeScript simulation contract. Satellites orbit Earth from snapshots produced by the local Python core, which can also run headlessly for batch work.
 
 ## Quick Start
 
@@ -10,6 +10,7 @@ Software-only crash-test lab for autonomous satellite swarms — a Three.js Eart
 |---|---|
 | Run Python core status | `npm run status` |
 | Print the epoch snapshot | `npm run snapshot` |
+| Run the simulation headlessly | `npm run headless -- swarm-48 --duration 3600 --step 5` |
 | Regenerate TS contract types | `npm run gen:contract` |
 | Start dev mode (core + Vite + Electron) | `npm run dev` |
 | Build frontend | `npm run build` |
@@ -29,12 +30,33 @@ The app opens with a brief `constellab` splash, then the landing page, then the 
 - Splash → landing page → viewport, all over a rotating Earth
 - `npm run dist:win` verifies icons in both portable launcher and inner exe
 
+## Day 8–10: scenarios, parameters and the canonical API
+
+- Scenarios load at runtime from validated configuration. `GET /api/scenarios` lists the built-in
+  catalog; `POST /api/scenario` accepts `{"key": "swarm-48"}` or `{"config": {...}}`. Inline configs
+  go through the same validator and a rejected load leaves the running scenario untouched.
+- Mission Parameters (rail icon) is generated from the contract schema: labels, units, steps and
+  bounds come from the schema's `x-ui` block through a widget registry, so a new same-type parameter
+  needs no editor code. Edits stay in a draft, are validated locally, and apply as a restart at epoch.
+- `GET /api/state` is the canonical stream: `{request_id, revision, scenario_id, clock, snapshot}`.
+  `revision` is monotonic, and the renderer drops any reply that is older than the state it already
+  shows, so a slow response can never roll the view backward. `GET /api/snapshot` stays a pure
+  contract payload.
+- Every reply echoes `X-Request-Id` (caller-supplied when valid) and `X-Revision`; errors are
+  `{error, message, request_id, ...}` with a stable code. Bodies are bounded at 1 MiB (413), non-JSON
+  content types are rejected (415) and unknown routes return a structured 404.
+- `constellab_core run` advances a scenario with no server and no browser, streaming one NDJSON
+  record per step (about 110k satellite states/s on a laptop), which is the entry point for batch
+  work. Training code is not coupled into the visual process.
+- The API is strictly renderer ↔ core. There is no satellite-to-satellite messaging or swarm
+  coordination yet.
+
 ## Day 4–5: satellites, orbit paths and motion
 
 - Satellite markers and their orbit paths are built from the snapshot `OrbitElements`
 - The core propagates position analytically (`F(t)`, two-body) at a fixed simulation-time step;
   frame rate never changes simulation state
-- The renderer polls `/api/snapshot` and moves markers; it never integrates orbits itself
+- The renderer polls the core's state stream and moves markers; it never integrates orbits itself
 - `state_from_elements_at_time(elements, 0)` equals the epoch `state_from_elements(elements)` and one
   full period returns to the starting position
 - Orbit paths and satellite positions share one ECI → scene mapping (`scene/orbit.ts`), so markers
@@ -87,10 +109,18 @@ Icons and the wordmark/symbol come from `assets/constellab_brand_assets/`. `asse
 |---|---|
 | `GET /api/status`, `GET /api/health` | service metadata |
 | `GET /api/contract` | JSON schema |
-| `GET /api/scenario` | loaded SimulationConfig |
-| `GET /api/snapshot` | SimulationSnapshot at epoch |
+| `GET /api/scenario` | currently loaded SimulationConfig |
+| `GET /api/scenarios` | built-in scenario catalog + active key |
+| `POST /api/scenario` | load `{"key": ...}` or `{"config": ...}`; restarts at epoch |
+| `GET /api/state` | canonical state stream: request id, revision, clock, snapshot |
+| `GET /api/snapshot` | SimulationSnapshot at the current clock time |
 | `POST /api/config/validate` | validate config |
-| `POST /api/snapshot` | validate config and return epoch snapshot |
+| `POST /api/snapshot` | validate config and return its epoch snapshot |
+| `GET /api/clock` | clock (epoch, simulation time, scale, paused) |
+| `POST /api/clock/pause`, `/resume`, `/reset`, `/step`, `/time_scale` | simulation time controls |
+
+Responses carry `X-Request-Id` and `X-Revision`. Errors are JSON with a stable `error` code, a
+human `message` and the `request_id`; validation errors also carry field-path `errors`.
 
 ## Folder Structure
 
@@ -114,6 +144,9 @@ npm run test      # Python core, contract drift, tsc, TS tests, Vite build
 npm run test:core # Python tests only
 npm run test:contract  # TypeScript contract tests
 npm run test:scene     # Scene lifecycle tests
+npm run test:scenario  # Schema-driven editor tests
+npm run test:api       # State stream / stale-snapshot guard tests
+npm run headless -- swarm-48 --duration 600 --step 10  # browser-free run
 npm run typecheck # tsc --noEmit
 npm run dev       # Start core + Vite + Electron
 npm run status    # Print core status as JSON
@@ -130,4 +163,9 @@ npm run icon      # Regenerate icons (needs Pillow)
 - **Day 3** ✅ Three.js Earth, offline texture, camera controls, stable lifecycle
 - **Day 4** ✅ four configured satellites and their orbit paths, rendered from snapshot elements
 - **Day 5** ✅ analytic two-body propagation, running core clock, live snapshot polling in the viewport
-- **Day 6** — simulation time controls (pause / resume / reset / step / time scale)
+- **Day 6** ✅ simulation time controls (pause / resume / reset / step / time scale)
+- **Day 7** ✅ satellite selection, camera focus and a typed inspector
+- **Day 8** ✅ runtime scenario loading from validated configuration (catalog + 48-satellite fixture)
+- **Day 9** ✅ schema-driven parameter editor with validated apply/restart
+- **Day 10** ✅ canonical API: request ids, state revisions, stale-snapshot guard, headless run
+- **Day 11** — next: agent policy loop over the headless core

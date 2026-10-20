@@ -15,6 +15,7 @@
   "include": [
     "src/contract",
     "src/scene/__tests__",
-    "src/scenario/__tests__"
+    "src/scenario/__tests__",
+    "src/api/__tests__"
   ]
 }

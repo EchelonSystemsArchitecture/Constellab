@@ -71,22 +71,30 @@ class TestScenarioApi(unittest.TestCase):
 
     def test_load_by_key_restarts_the_clock(self):
         self._reset()
-        res, payload = self._request("GET", "/api/snapshot")
+        # Park the running clock far ahead so an inherited time would be obvious.
+        self._request("POST", "/api/clock/pause", json.dumps({}))
+        self._request("POST", "/api/clock/time_scale", json.dumps({"time_scale": 1}))
+        for _ in range(100):
+            self._request("POST", "/api/clock/step", json.dumps({}))
+        res, before = self._request("GET", "/api/snapshot")
         self.assertEqual(res.status, 200)
+        self.assertGreater(before["clock"]["simulation_time_s"], 90)
 
         res, payload = self._request("POST", "/api/scenario", json.dumps({"key": "swarm-48"}))
         self.assertEqual(res.status, 200)
         self.assertEqual(payload["scenario"]["scenario_id"], "swarm-48")
         self.assertEqual(len(payload["scenario"]["satellites"]), 48)
         self.assertEqual(payload["clock"]["paused"], False)
-        self.assertLess(payload["clock"]["simulation_time_s"], 1.0)
+        self.assertEqual(payload["clock"]["simulation_time_s"], 0.0)
 
         res, snap = self._request("GET", "/api/snapshot")
         self.assertEqual(res.status, 200)
         self.assertEqual(snap["scenario_id"], "swarm-48")
         self.assertEqual(len(snap["satellites"]), 48)
         # Loading restarts the clock: the new scenario does not inherit old time.
-        self.assertLess(snap["clock"]["simulation_time_s"], 1.0)
+        # Generous bound: at the scenario's 60x scale this is well under a second
+        # of wall time, so a slow machine can not make a restart look like a keep.
+        self.assertLess(snap["clock"]["simulation_time_s"], 50.0)
         self._reset()
 
     def test_unknown_key_is_a_structured_404(self):

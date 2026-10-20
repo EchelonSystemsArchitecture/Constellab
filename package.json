@@ -19,7 +19,9 @@
     "fetch-python": "node scripts/fetch-python-embed.js",
     "icon": "node scripts/py.js scripts/make_icon.py",
     "dist:win": "npm run build && npm run fetch-python && electron-builder --win portable && node scripts/py.js scripts/check_win_icons.py",
-    "test:scenario": "tsc -p frontend/tsconfig.test.json && node --test \"frontend/.test-out/scenario/__tests__/*.test.js\""
+    "test:scenario": "tsc -p frontend/tsconfig.test.json && node --test \"frontend/.test-out/scenario/__tests__/*.test.js\"",
+    "test:api": "tsc -p frontend/tsconfig.test.json && node --test \"frontend/.test-out/api/__tests__/*.test.js\"",
+    "headless": "node scripts/py.js -m constellab_core run"
   },
   "devDependencies": {
     "@types/node": "20.19.43",

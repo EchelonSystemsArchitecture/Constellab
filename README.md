@@ -53,7 +53,8 @@ The app opens with a brief `constellab` splash, then the landing page, then the 
 
 ## Day 4–5: satellites, orbit paths and motion
 
-- Satellite markers and their orbit paths are built from the snapshot `OrbitElements`
+- Satellite markers and their orbit paths are built from the snapshot `OrbitElements`;
+  the scrubber's **Toggle Orbits** button hides or shows every path without touching state
 - The core propagates position analytically (`F(t)`, two-body) at a fixed simulation-time step;
   frame rate never changes simulation state
 - The renderer polls the core's state stream and moves markers; it never integrates orbits itself
@@ -61,7 +62,8 @@ The app opens with a brief `constellab` splash, then the landing page, then the 
   full period returns to the starting position
 - Orbit paths and satellite positions share one ECI → scene mapping (`scene/orbit.ts`), so markers
   ride their own trajectory lines
-- The demo scenario runs at `time_scale` 300 (≈19 s per LEO revolution); controls arrive on Day 6
+- The demo scenario runs at `time_scale` 300 (≈19 s per LEO revolution); the clock controls that
+  drive it are described under Day 6 above
 
 ### Brand assets
 
@@ -70,7 +72,8 @@ Icons and the wordmark/symbol come from `assets/constellab_brand_assets/`. `asse
 
 ## Day 3: the Earth viewport
 
-- Lit Earth sphere with generated schematic texture (no external assets)
+- Lit Earth sphere using the served tactical Earth texture (`frontend/public/earth-tactical-dark.png`),
+  with a canvas-drawn schematic fallback if the image cannot load
 - Drag to orbit; wheel/pinch or +/− buttons to zoom; Reset view restores camera
 - Earth is static — camera animation never changes simulation time
 - Renders even if core is unreachable; telemetry panel reports errors separately
@@ -122,6 +125,14 @@ Icons and the wordmark/symbol come from `assets/constellab_brand_assets/`. `asse
 Responses carry `X-Request-Id` and `X-Revision`. Errors are JSON with a stable `error` code, a
 human `message` and the `request_id`; validation errors also carry field-path `errors`.
 
+Clock semantics:
+
+- `reset` returns to the scenario's epoch: `t = 0`, clock paused, the scenario's own `time_scale`.
+- `step` advances exactly one simulated second, whatever the time scale, and never changes the
+  paused/running state.
+- `time_scale` must be a positive JSON number (`true`, strings and `null` are rejected with
+  `400 invalid_time_scale`); accepted values are clamped to `[0.001, 1 000 000]`.
+
 ## Folder Structure
 
 ```
@@ -160,12 +171,13 @@ npm run icon      # Regenerate icons (needs Pillow)
 
 - **Day 1** ✅ runnable baseline, portable .exe, minimal folder structure
 - **Day 2** ✅ versioned contract, generated TS types, round-trip tests
-- **Day 3** ✅ Three.js Earth, offline texture, camera controls, stable lifecycle
+- **Day 3** ✅ Three.js Earth with the local tactical texture (canvas fallback), camera controls, stable lifecycle
 - **Day 4** ✅ four configured satellites and their orbit paths, rendered from snapshot elements
 - **Day 5** ✅ analytic two-body propagation, running core clock, live snapshot polling in the viewport
-- **Day 6** ✅ simulation time controls (pause / resume / reset / step / time scale)
+- **Day 6** ✅ simulation time controls (pause / resume / reset / step / time scale), covered by
+  `core/tests/test_clock.py` (freeze, exact epoch restore, repeated step, scale rate, invalid scale)
 - **Day 7** ✅ satellite selection, camera focus and a typed inspector
 - **Day 8** ✅ runtime scenario loading from validated configuration (catalog + 48-satellite fixture)
 - **Day 9** ✅ schema-driven parameter editor with validated apply/restart
 - **Day 10** ✅ canonical API: request ids, state revisions, stale-snapshot guard, headless run
-- **Day 11** — next: agent policy loop over the headless core
+- **Day 11** — next: renderer scale beyond four satellites (instanced markers, bounded paths, 100/500/1,000-satellite benchmarks)

@@ -52,3 +52,7 @@ docs/
 
 # regenerable map-data cache for scripts/generate_tactical_earth.py
 scripts/.geo_cache/
+
+# local high-resolution source copy; the served startup background lives in
+# frontend/public/planet-earth-background.jpg and is tracked
+assets/planet-earth-background.jpg

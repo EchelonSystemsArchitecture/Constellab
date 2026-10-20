@@ -114,6 +114,7 @@ export function SceneShell({ snapshot, status, statusError, onExit }: SceneShell
   const [isScenarioOpen, setIsScenarioOpen] = useState(false);
   const [autoRotate] = useState(true);
   const [showOverlays, setShowOverlays] = useState(true);
+  const [showOrbits, setShowOrbits] = useState(true);
   const [showCallouts] = useState(true);
 
   // Mount Three.js viewport
@@ -147,6 +148,11 @@ export function SceneShell({ snapshot, status, statusError, onExit }: SceneShell
   useEffect(() => {
     scene.current?.setOverlaysVisible(showOverlays);
   }, [showOverlays]);
+
+  // Toggle orbit paths; Day 4 requires every path to be switchable.
+  useEffect(() => {
+    scene.current?.setOrbitsVisible(showOrbits);
+  }, [showOrbits]);
 
   // Toggle auto-rotation
   useEffect(() => {
@@ -697,6 +703,20 @@ export function SceneShell({ snapshot, status, statusError, onExit }: SceneShell
             aria-label="Zoom out"
           >
             −
+          </button>
+
+          <button
+            type="button"
+            className={`tool-btn ${showOrbits ? "tool-btn--active" : ""}`}
+            onClick={() => setShowOrbits((v) => !v)}
+            title="Toggle Orbit Paths"
+            aria-label="Toggle Orbits"
+            aria-pressed={showOrbits}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <ellipse cx="12" cy="12" rx="10" ry="4.5" transform="rotate(-28 12 12)" />
+              <circle cx="19" cy="6.5" r="1.8" />
+            </svg>
           </button>
 
           <button

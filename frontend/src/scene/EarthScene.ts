@@ -41,6 +41,7 @@ export class EarthScene {
   private onSelectCallback?: (id: string | null) => void;
   private lastProjections: SatelliteProjection[] = [];
   private selectedId: string | null = null;
+  private orbitsVisible = true;
   private autoRotate = true;
   private rotationSpeed = 0.0006;
 
@@ -161,6 +162,13 @@ export class EarthScene {
     this.overlays.group.visible = visible;
   }
 
+  /** Show/hide every orbit path; satellites stay visible either way. */
+  setOrbitsVisible(visible: boolean) {
+    this.orbitsVisible = visible;
+    for (const line of this.satelliteLines) line.visible = visible;
+    this.renderer.domElement.dataset.orbitsVisible = String(visible);
+  }
+
   setAutoRotate(enabled: boolean) {
     this.autoRotate = enabled;
   }
@@ -276,6 +284,7 @@ export class EarthScene {
         const visuals = createSatelliteVisuals(sat, color);
         visuals.satelliteMesh.scale.setScalar(sat.id === this.selectedId ? 1.7 : 1);
         (visuals.orbitLine.userData as any).meshId = sat.id;
+        visuals.orbitLine.visible = this.orbitsVisible;
         this.worldScene.add(visuals.orbitLine);
         this.worldScene.add(visuals.satelliteMesh);
         this.satelliteLines.push(visuals.orbitLine);

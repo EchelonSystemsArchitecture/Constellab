@@ -66,6 +66,19 @@ class TestSchemaDocument(unittest.TestCase):
         with self.assertRaises(UnsupportedSchema):
             SchemaValidator({"$defs": {"X": {"type": "object", "patternProperties": {}}}})
 
+    def test_ui_annotations_are_declared_for_editable_fields(self):
+        # Day 9: the editor derives labels, units and steps from x-ui. The schema
+        # validator must accept the annotation key and the metadata must cover
+        # every field the editor expects to render.
+        annotations = SCHEMA.get("x-ui", {})
+        self.assertIn("OrbitElements.semi_major_axis_km", annotations)
+        self.assertEqual(annotations["OrbitElements.semi_major_axis_km"]["unit"], "km")
+        self.assertIn("SimulationConfig.time_scale", annotations)
+        self.assertTrue(annotations["SimulationConfig.scenario_id"]["readOnly"])
+        # The annotation is the only x-ui key; other x-* keys stay unsupported.
+        with self.assertRaises(UnsupportedSchema):
+            SchemaValidator({"x-custom": {}})
+
 
 class TestVersionCompatibility(unittest.TestCase):
     def test_rules(self):

@@ -12,7 +12,7 @@ import re
 from typing import Any
 
 SUPPORTED_KEYWORDS = frozenset({
-    "$schema", "$id", "$ref", "$defs", "title", "description", "default", "x-schema-version",
+    "$schema", "$id", "$ref", "$defs", "title", "description", "default", "x-schema-version", "x-ui",
     "type", "required", "properties", "additionalProperties", "enum", "const",
     "minimum", "maximum", "exclusiveMinimum", "exclusiveMaximum",
     "minLength", "maxLength", "pattern", "minItems", "maxItems", "items", "x-unique-by",

@@ -6,6 +6,7 @@ import { EarthScene } from "./EarthScene";
 import { GroundTrackMap } from "./GroundTrackMap";
 import { InspectorPanel } from "./InspectorPanel";
 import { ScenarioCatalog } from "../scenario/ScenarioCatalog";
+import { ParameterEditor } from "../scenario/ParameterEditor";
 import { getSatelliteColor } from "./orbit";
 import { SCENE_CONFIG } from "./config";
 
@@ -41,6 +42,9 @@ async function clockPost(action: string, body?: object): Promise<SimulationClock
 
 const km = (v: number) => v.toFixed(1);
 const kms = (v: number) => v.toFixed(3);
+
+const TIME_SCALE_OPTIONS = [1, 10, 60, 300, 1000, 10000, 36000];
+const formatScale = (value: number) => `${value.toLocaleString("en-US")}×`;
 
 function formatSimulatedTime(epochUtc?: string, simTimeS: number = 0): string {
   const epoch = epochUtc ? new Date(epochUtc).getTime() : Date.now();
@@ -298,7 +302,11 @@ export function SceneShell({ snapshot, status, statusError, onExit }: SceneShell
             type="button"
             className={`rail-item ${isInspectorOpen ? "rail-item--active" : ""}`}
             aria-pressed={isInspectorOpen}
-            onClick={() => setIsInspectorOpen((v) => !v)}
+            onClick={() => {
+              setIsInspectorOpen((v) => !v);
+              setIsSettingsOpen(false);
+              setIsDrawerOpen(false);
+            }}
             title="Satellite Inspector (select by ID, orbit elements, ECI state)"
             aria-label="Satellite Inspector"
           >
@@ -313,7 +321,11 @@ export function SceneShell({ snapshot, status, statusError, onExit }: SceneShell
             type="button"
             className={`rail-item ${isDrawerOpen ? "rail-item--active" : ""}`}
             aria-pressed={isDrawerOpen}
-            onClick={() => setIsDrawerOpen((v) => !v)}
+            onClick={() => {
+              setIsDrawerOpen((v) => !v);
+              setIsInspectorOpen(false);
+              setIsSettingsOpen(false);
+            }}
             title="Swarm telemetry table"
             aria-label="Swarm telemetry table"
           >
@@ -328,9 +340,14 @@ export function SceneShell({ snapshot, status, statusError, onExit }: SceneShell
           <button
             type="button"
             className={`rail-item ${isSettingsOpen ? "rail-item--active" : ""}`}
-            onClick={() => setIsSettingsOpen((v) => !v)}
-            title="Tactical Mission Settings"
-            aria-label="Mission Settings"
+            aria-pressed={isSettingsOpen}
+            onClick={() => {
+              setIsSettingsOpen((v) => !v);
+              setIsInspectorOpen(false);
+              setIsDrawerOpen(false);
+            }}
+            title="Mission parameters (schema-driven editor)"
+            aria-label="Mission Parameters"
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
               <circle cx="12" cy="12" r="3" />
@@ -388,7 +405,7 @@ export function SceneShell({ snapshot, status, statusError, onExit }: SceneShell
       </header>
 
       {/* 3. 2D Satellite Tactical Callout Overlay Layer */}
-      <div className="scene-shell__callout-layer" pointer-events="none">
+      <div className="scene-shell__callout-layer" style={{ pointerEvents: "none" }}>
         <svg className="scene-shell__callout-svg" width="100%" height="100%">
           {projections
             .filter((p) => !p.isOccluded)
@@ -466,6 +483,15 @@ export function SceneShell({ snapshot, status, statusError, onExit }: SceneShell
           onClearSelection={() => setSelectedSatId(null)}
           onClose={() => setIsInspectorOpen(false)}
           focusAvailable={viewMode === "3d" && !sceneError}
+        />
+      )}
+
+      {/* Day 9: schema-driven parameter editor, opened from the settings rail item */}
+      {isSettingsOpen && (
+        <ParameterEditor
+          activeScenarioId={activeScenarioId}
+          onClose={() => setIsSettingsOpen(false)}
+          onApplied={() => setSelectedSatId(null)}
         />
       )}
 
@@ -600,12 +626,14 @@ export function SceneShell({ snapshot, status, statusError, onExit }: SceneShell
               className="scrubber-select mono"
               title="Simulation speed multiplier"
             >
-              <option value={1}>1×</option>
-              <option value={10}>10×</option>
-              <option value={60}>60×</option>
-              <option value={300}>300×</option>
-              <option value={3600}>1,000×</option>
-              <option value={36000}>10,000×</option>
+              {/* Include the live scale even when the parameter editor sets a
+                  value outside the preset list, so the control never lies. */}
+              {(TIME_SCALE_OPTIONS.includes(displayTimeWarp)
+                ? TIME_SCALE_OPTIONS
+                : [...TIME_SCALE_OPTIONS, displayTimeWarp].sort((a, b) => a - b)
+              ).map((scale) => (
+                <option key={scale} value={scale}>{formatScale(scale)}</option>
+              ))}
             </select>
           </div>
         </div>

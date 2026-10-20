@@ -62,6 +62,14 @@ export async function listScenarios(): Promise<{ scenarios: ScenarioSummary[]; a
   return { scenarios, active };
 }
 
+/** The effective configuration currently running in the core. */
+export async function fetchActiveConfig(): Promise<SimulationConfig> {
+  const res = await fetch(`${CORE_URL}/api/scenario`);
+  const payload = await readJson(res);
+  if (!res.ok) throw errorFrom(payload, res.status, `core returned HTTP ${res.status}`);
+  return parseConfig(payload);
+}
+
 /** Load a built-in scenario by key; the core restarts its clock at t=0. */
 export async function loadScenario(key: string): Promise<LoadedScenario> {
   const res = await fetch(`${CORE_URL}/api/scenario`, {

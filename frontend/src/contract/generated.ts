@@ -9,6 +9,65 @@ export const SIMULATION_CONTRACT_SCHEMA = {
   "$id": "https://constellab.ai/schemas/simulation_contract/1.0.0",
   "title": "ConstellaLab simulation/visualization contract",
   "x-schema-version": "1.0.0",
+  "x-ui": {
+    "SimulationConfig.schema_version": {
+      "label": "Schema version",
+      "readOnly": true
+    },
+    "SimulationConfig.scenario_id": {
+      "label": "Scenario id",
+      "readOnly": true
+    },
+    "SimulationConfig.name": {
+      "label": "Scenario name"
+    },
+    "SimulationConfig.seed": {
+      "label": "Master seed",
+      "step": 1
+    },
+    "SimulationConfig.time_scale": {
+      "label": "Time scale",
+      "unit": "\u00d7",
+      "step": 1
+    },
+    "SimulationConfig.epoch_utc": {
+      "label": "Epoch (UTC)",
+      "readOnly": true
+    },
+    "SatelliteConfig.id": {
+      "label": "Entity id",
+      "readOnly": true
+    },
+    "OrbitElements.semi_major_axis_km": {
+      "label": "Semi-major axis",
+      "unit": "km",
+      "step": 0.001
+    },
+    "OrbitElements.eccentricity": {
+      "label": "Eccentricity",
+      "step": 0.0001
+    },
+    "OrbitElements.inclination_deg": {
+      "label": "Inclination",
+      "unit": "\u00b0",
+      "step": 0.1
+    },
+    "OrbitElements.raan_deg": {
+      "label": "RAAN",
+      "unit": "\u00b0",
+      "step": 0.1
+    },
+    "OrbitElements.argument_of_perigee_deg": {
+      "label": "Argument of perigee",
+      "unit": "\u00b0",
+      "step": 0.1
+    },
+    "OrbitElements.true_anomaly_deg": {
+      "label": "True anomaly",
+      "unit": "\u00b0",
+      "step": 0.1
+    }
+  },
   "description": "Single versioned source for the data exchanged between the simulation core and any renderer. Conventions: lengths in kilometres, velocities in kilometres per second, angles in degrees, durations in seconds. Positions and velocities are expressed in a non-rotating Earth-centred inertial (ECI) frame whose axes are fixed at the scenario epoch; Earth rotation and precession are not modelled. `epoch_utc` is an ISO 8601 UTC instant (suffix Z); `simulation_time_s` counts simulated seconds since that epoch and is owned exclusively by the core. Optional fields may be omitted (defaults apply) but may not be null; unknown fields are rejected. Array position is never an identity: every entity carries a stable `id`. Compatibility rule: a payload is accepted when its schema_version has the same major version as this document and a minor version not greater than this document's.",
   "$defs": {
     "SchemaVersion": {

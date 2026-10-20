@@ -16,7 +16,7 @@ type Json = null | boolean | number | string | Json[] | { [key: string]: Json };
 type SchemaNode = Record<string, unknown>;
 
 const SUPPORTED_KEYWORDS = new Set([
-  "$schema", "$id", "$ref", "$defs", "title", "description", "default", "x-schema-version",
+  "$schema", "$id", "$ref", "$defs", "title", "description", "default", "x-schema-version", "x-ui",
   "type", "required", "properties", "additionalProperties", "enum", "const",
   "minimum", "maximum", "exclusiveMinimum", "exclusiveMaximum",
   "minLength", "maxLength", "pattern", "minItems", "maxItems", "items", "x-unique-by",

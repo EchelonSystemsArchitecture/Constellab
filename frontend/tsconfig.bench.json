@@ -1,0 +1,23 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "module": "CommonJS",
+    "moduleResolution": "Node",
+    "allowImportingTsExtensions": false,
+    "noEmit": false,
+    "outDir": ".bench-out",
+    "rootDir": "src",
+    "types": [
+      "node"
+    ],
+    "esModuleInterop": true
+  },
+  "include": [
+    "src/bench",
+    "src/contract",
+    "src/scene"
+  ],
+  "exclude": [
+    "src/scene/__tests__"
+  ]
+}

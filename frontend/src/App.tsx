@@ -1,6 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ContractError, SimulationSnapshot } from "./contract";
+import {
+  initialConnection,
+  nextConnection,
+  reconnectResetsCursor,
+  type ConnectionEvent,
+  type ConnectionInfo,
+} from "./api/connection";
 import { cursorOf, parseStateEnvelope, shouldAcceptState, type StateCursor } from "./api/state";
+import { ErrorBoundary } from "./ErrorBoundary";
 import { SceneShell } from "./scene/SceneShell";
 import { StartupScreen } from "./StartupScreen";
 
@@ -43,6 +51,18 @@ function describeFailure(err: unknown): SnapshotState {
   return { kind: "rejected", reason: err instanceof Error ? err.message : String(err), errors: [] };
 }
 
+function connectionEventFor(err: unknown, atMs: number): ConnectionEvent {
+  if (err instanceof ContractError) {
+    const first = err.errors[0];
+    return {
+      type: "invalid",
+      atMs,
+      message: first ? `${first.path}: ${first.message}` : "contract violation",
+    };
+  }
+  return { type: "failure", atMs, message: err instanceof Error ? err.message : String(err) };
+}
+
 export default function App() {
   const [phase, setPhase] = useState<"startup" | "app">(() => {
     if (typeof window !== "undefined") {
@@ -54,8 +74,13 @@ export default function App() {
   const [status, setStatus] = useState<CoreStatus | null>(null);
   const [statusError, setStatusError] = useState<string | null>(null);
   const [snapshot, setSnapshot] = useState<SnapshotState>({ kind: "loading" });
+  const [connection, setConnection] = useState<ConnectionInfo>(() => initialConnection());
+  const [receivedAtMs, setReceivedAtMs] = useState<number | null>(null);
   // Highest state revision applied so far; late replies are dropped against it.
   const cursor = useRef<StateCursor | null>(null);
+  // Mutable mirror of `connection` so the polling loop reads the latest phase
+  // without being torn down and recreated on every reply.
+  const connectionRef = useRef<ConnectionInfo>(connection);
 
   const handleLaunch = useCallback(() => setPhase("app"), []);
 
@@ -90,17 +115,34 @@ export default function App() {
     let cancelled = false;
     let timer: number | undefined;
     const poll = async () => {
+      let delay = SNAPSHOT_POLL_MS;
       try {
         const state = await fetchState();
         if (cancelled) return;
+        const atMs = Date.now();
+        const previous = connectionRef.current;
+        const next = nextConnection(previous, { type: "ok", atMs });
+        // A restarted core begins a new revision epoch; a stale cursor would
+        // otherwise reject every reply from the fresh process forever.
+        if (reconnectResetsCursor(previous, next)) cursor.current = null;
+        connectionRef.current = next;
+        setConnection(next);
         if (!shouldAcceptState(cursor.current, state)) return;
         cursor.current = cursorOf(state);
         setSnapshot({ kind: "ready", snapshot: state.snapshot });
+        setReceivedAtMs(atMs);
       } catch (err) {
-        if (!cancelled) setSnapshot((prev) => (prev.kind === "ready" ? prev : describeFailure(err)));
+        if (cancelled) return;
+        const next = nextConnection(connectionRef.current, connectionEventFor(err, Date.now()));
+        connectionRef.current = next;
+        setConnection(next);
+        // Keep the last true snapshot on screen (marked stale by the banner);
+        // only a first load with no data becomes a hard error panel.
+        setSnapshot((prev) => (prev.kind === "ready" ? prev : describeFailure(err)));
+        delay = Math.max(next.retryDelayMs, SNAPSHOT_POLL_MS);
       } finally {
         // Never reschedule after cleanup, or an unmounted tab keeps polling.
-        if (!cancelled) timer = window.setTimeout(poll, SNAPSHOT_POLL_MS);
+        if (!cancelled) timer = window.setTimeout(poll, delay);
       }
     };
     poll();
@@ -117,12 +159,16 @@ export default function App() {
   return (
     <div className="app app--tactical">
       <main className="app__main app__main--tactical">
-        <SceneShell
-          snapshot={snapshot}
-          status={status}
-          statusError={statusError}
-          onExit={() => setPhase("startup")}
-        />
+        <ErrorBoundary>
+          <SceneShell
+            snapshot={snapshot}
+            status={status}
+            statusError={statusError}
+            connection={connection}
+            snapshotReceivedAtMs={receivedAtMs}
+            onExit={() => setPhase("startup")}
+          />
+        </ErrorBoundary>
       </main>
     </div>
   );

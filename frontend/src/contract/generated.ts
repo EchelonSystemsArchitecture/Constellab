@@ -1,14 +1,14 @@
 // GENERATED FILE - do not edit. Source: core/constellab_core/data/simulation_contract.schema.json
 // Regenerate with: npm run gen:contract
 
-export const SCHEMA_VERSION = "1.0.0";
+export const SCHEMA_VERSION = "1.1.0";
 
 /** The contract schema, embedded so the renderer can validate snapshots at runtime. */
 export const SIMULATION_CONTRACT_SCHEMA = {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://constellab.ai/schemas/simulation_contract/1.0.0",
+  "$id": "https://constellab.ai/schemas/simulation_contract/1.1.0",
   "title": "ConstellaLab simulation/visualization contract",
-  "x-schema-version": "1.0.0",
+  "x-schema-version": "1.1.0",
   "x-ui": {
     "SimulationConfig.schema_version": {
       "label": "Schema version",
@@ -32,6 +32,10 @@ export const SIMULATION_CONTRACT_SCHEMA = {
     },
     "SimulationConfig.epoch_utc": {
       "label": "Epoch (UTC)",
+      "readOnly": true
+    },
+    "SimulationConfig.dynamics_model": {
+      "label": "Dynamics model",
       "readOnly": true
     },
     "SatelliteConfig.id": {
@@ -266,6 +270,13 @@ export const SIMULATION_CONTRACT_SCHEMA = {
           "maximum": 1000000,
           "default": 1
         },
+        "dynamics_model": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64,
+          "default": "keplerian-two-body",
+          "description": "Key of the registered dynamics component that propagates this scenario. Validated against the core's model registry; the default is the analytic two-body Kepler model."
+        },
         "satellites": {
           "type": "array",
           "items": {
@@ -404,6 +415,8 @@ export interface SimulationConfig {
   seed: number;
   epoch_utc: UtcTimestamp;
   time_scale?: number;
+  /** Key of the registered dynamics component that propagates this scenario. Validated against the core's model registry; the default is the analytic two-body Kepler model. */
+  dynamics_model?: string;
   satellites: SatelliteConfig[];
 }
 

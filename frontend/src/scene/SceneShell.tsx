@@ -1,10 +1,14 @@
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import type { SnapshotState } from "../App";
+import type { ConnectionInfo } from "../api/connection";
+import { connectionLabel, connectionMessage } from "../api/connection";
 import type { SatelliteState, SimulationClock } from "../contract";
 import type { SatelliteProjection } from "./EarthScene";
 import { EarthScene } from "./EarthScene";
 import { GroundTrackMap } from "./GroundTrackMap";
 import { InspectorPanel } from "./InspectorPanel";
+import { SceneDiagnostics } from "./SceneDiagnostics";
+import { DEFAULT_DIAGNOSTIC_TOGGLES, type DiagnosticToggles, snapshotAgeMs } from "./diagnostics";
 import { ScenarioCatalog } from "../scenario/ScenarioCatalog";
 import { ParameterEditor } from "../scenario/ParameterEditor";
 import { getSatelliteColor } from "./orbit";
@@ -23,7 +27,34 @@ interface SceneShellProps {
   snapshot: SnapshotState;
   status?: CoreStatus | null;
   statusError?: string | null;
+  connection?: ConnectionInfo | null;
+  snapshotReceivedAtMs?: number | null;
   onExit?: () => void;
+}
+
+/** Link state banner; ticks its own countdown while the core is unreachable. */
+function ConnectionBanner({ connection }: { connection: ConnectionInfo }) {
+  const live = connection.phase === "live";
+  const [nowMs, setNowMs] = useState(() => Date.now());
+  useEffect(() => {
+    if (live) return;
+    const timer = window.setInterval(() => setNowMs(Date.now()), 250);
+    return () => window.clearInterval(timer);
+  }, [live]);
+  const message = connectionMessage(connection, nowMs);
+  return (
+    <div
+      className={`scene-shell__connection scene-shell__connection--${connection.phase}`}
+      role="status"
+      data-testid="connection-banner"
+      data-connection-phase={connection.phase}
+    >
+      <span className={`topbar-status ${live ? "topbar-status--ok" : "topbar-status--down"}`}>
+        {connectionLabel(connection)}
+      </span>
+      <span className="scene-shell__connection-text mono">{message}</span>
+    </div>
+  );
 }
 
 async function clockPost(action: string, body?: object): Promise<SimulationClock | null> {
@@ -96,7 +127,7 @@ function SatelliteRow({
   );
 }
 
-export function SceneShell({ snapshot, status, statusError, onExit }: SceneShellProps) {
+export function SceneShell({ snapshot, status, statusError, connection, snapshotReceivedAtMs, onExit }: SceneShellProps) {
   const viewport = useRef<HTMLDivElement>(null);
   const scene = useRef<EarthScene | null>(null);
   const [sceneError, setSceneError] = useState<string | null>(null);
@@ -116,6 +147,10 @@ export function SceneShell({ snapshot, status, statusError, onExit }: SceneShell
   const [showOverlays, setShowOverlays] = useState(true);
   const [showOrbits, setShowOrbits] = useState(true);
   const [showCallouts] = useState(true);
+  // Day 12: diagnostics are display-only layers with independent toggles.
+  const [showDiagnostics, setShowDiagnostics] = useState(false);
+  const [diagnosticToggles, setDiagnosticToggles] = useState<DiagnosticToggles>(DEFAULT_DIAGNOSTIC_TOGGLES);
+  const [renderFps, setRenderFps] = useState<number | null>(null);
 
   // Mount Three.js viewport
   useEffect(() => {
@@ -163,6 +198,20 @@ export function SceneShell({ snapshot, status, statusError, onExit }: SceneShell
   useEffect(() => {
     scene.current?.setSelection(selectedSatId);
   }, [selectedSatId]);
+
+  // Diagnostic plane layer follows its own toggle.
+  useEffect(() => {
+    scene.current?.setOrbitPlaneVisible(diagnosticToggles.orbitPlane);
+  }, [diagnosticToggles.orbitPlane]);
+
+  // Renderer health readout; read from the scene rather than measuring in React.
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      const stats = scene.current?.renderStats();
+      setRenderFps(stats && stats.frames > 0 ? stats.fps : null);
+    }, 1000);
+    return () => window.clearInterval(timer);
+  }, []);
 
   const satellites = snapshot.kind === "ready" ? snapshot.snapshot.satellites : [];
   const activeScenarioId = snapshot.kind === "ready" ? snapshot.snapshot.scenario_id : null;
@@ -224,9 +273,16 @@ export function SceneShell({ snapshot, status, statusError, onExit }: SceneShell
   const simSeconds = currentClock?.simulation_time_s ?? 0;
   const epochUtc = currentClock?.epoch_utc;
   const formattedTimestamp = useMemo(() => formatSimulatedTime(epochUtc, simSeconds), [epochUtc, simSeconds]);
+  const snapshotAge = snapshotAgeMs(snapshotReceivedAtMs ?? null, Date.now());
 
   return (
-    <section className="scene-shell" data-testid="scene-shell" aria-label="Orbital viewport">
+    <section
+      className="scene-shell"
+      data-testid="scene-shell"
+      aria-label="Orbital viewport"
+      data-connection-phase={connection?.phase ?? "connecting"}
+      data-snapshot-age-ms={snapshotAge === null ? "" : String(Math.round(snapshotAge))}
+    >
       {/* 3D WebGL Canvas Viewport (preserved in DOM for contract & scene tests) */}
       <div
         className="scene-shell__viewport"
@@ -325,6 +381,19 @@ export function SceneShell({ snapshot, status, statusError, onExit }: SceneShell
 
           <button
             type="button"
+            className={`rail-item ${showDiagnostics ? "rail-item--active" : ""}`}
+            aria-pressed={showDiagnostics}
+            onClick={() => setShowDiagnostics((v) => !v)}
+            title="Visual diagnostics (ids, orbit plane, time, selection, snapshot age)"
+            aria-label="Toggle diagnostics"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
+              <polyline points="2 13 6 13 9 5 13 19 16 10 19 13 22 13" />
+            </svg>
+          </button>
+
+          <button
+            type="button"
             className={`rail-item ${isDrawerOpen ? "rail-item--active" : ""}`}
             aria-pressed={isDrawerOpen}
             onClick={() => {
@@ -409,6 +478,23 @@ export function SceneShell({ snapshot, status, statusError, onExit }: SceneShell
           </button>
         </div>
       </header>
+
+      {/* Day 12: link state. A stale globe must never look live. */}
+      {connection && connection.phase !== "live" && <ConnectionBanner connection={connection} />}
+
+      {/* Day 12: display-only diagnostics with independent layer toggles. */}
+      {showDiagnostics && (
+        <SceneDiagnostics
+          snapshot={snapshot.kind === "ready" ? snapshot.snapshot : null}
+          projections={projections}
+          toggles={diagnosticToggles}
+          selectedId={selectedSatId}
+          receivedAtMs={snapshotReceivedAtMs ?? null}
+          renderFps={renderFps}
+          onToggle={(key) => setDiagnosticToggles((current) => ({ ...current, [key]: !current[key] }))}
+          onClose={() => setShowDiagnostics(false)}
+        />
+      )}
 
       {/* 3. 2D Satellite Tactical Callout Overlay Layer */}
       <div className="scene-shell__callout-layer" style={{ pointerEvents: "none" }}>
@@ -544,6 +630,12 @@ export function SceneShell({ snapshot, status, statusError, onExit }: SceneShell
               {`scenario ${snapshot.snapshot.scenario_id} · epoch ${snapshot.snapshot.clock.epoch_utc} · t = ${snapshot.snapshot.clock.simulation_time_s.toFixed(1)} s · ×${snapshot.snapshot.clock.time_scale} · ${snapshot.snapshot.clock.paused ? "paused" : "running"} · ${snapshot.snapshot.satellites.length} satellites`}
             </div>
 
+            {snapshot.snapshot.satellites.length > SCENE_CONFIG.fleet.telemetryRowLimit && (
+              <div className="drawer-note" data-testid="telemetry-window">
+                {`showing ${SCENE_CONFIG.fleet.telemetryRowLimit} of ${snapshot.snapshot.satellites.length} satellites · use the inspector to select any ID`}
+              </div>
+            )}
+
             <div className="snapshot__scroll">
               <table className="snapshot__table tactical-table">
                 <thead>
@@ -556,15 +648,20 @@ export function SceneShell({ snapshot, status, statusError, onExit }: SceneShell
                   </tr>
                 </thead>
                 <tbody>
-                  {snapshot.snapshot.satellites.map((sat, i) => (
-                    <SatelliteRow
-                      key={sat.id}
-                      sat={sat}
-                      color={getSatelliteColor(i)}
-                      isSelected={selectedSatId === sat.id}
-                      onSelect={() => handleSelectSatellite(sat.id)}
-                    />
-                  ))}
+                  {/* Day 11: a 1,000-satellite fleet must not mount 1,000 table
+                      rows. The camera, selection and 3D markers still address all
+                      of them; the table is a bounded window with a count. */}
+                  {snapshot.snapshot.satellites
+                    .slice(0, SCENE_CONFIG.fleet.telemetryRowLimit)
+                    .map((sat, i) => (
+                      <SatelliteRow
+                        key={sat.id}
+                        sat={sat}
+                        color={getSatelliteColor(i)}
+                        isSelected={selectedSatId === sat.id}
+                        onSelect={() => handleSelectSatellite(sat.id)}
+                      />
+                    ))}
                 </tbody>
               </table>
             </div>

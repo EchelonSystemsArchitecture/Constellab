@@ -11,7 +11,13 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from constellab_core.config import BUILTIN_SCENARIOS, builtin_scenario, scenario_catalog  # noqa: E402
+from constellab_core.config import (  # noqa: E402
+    BUILTIN_SCENARIOS,
+    FLEET_PLANES,
+    builtin_scenario,
+    scenario_catalog,
+    walker_delta_payload,
+)
 from constellab_core.service import CoreHandler, serve  # noqa: E402
 
 
@@ -32,6 +38,32 @@ class TestScenarioCatalog(unittest.TestCase):
         self.assertEqual(len({s.id for s in config.satellites}), 48)
         for sat in config.satellites:
             self.assertGreater(sat.orbit.semi_major_axis_km, 6378.137)
+
+    def test_generated_fleet_scenarios_have_the_requested_size(self):
+        for key, count in (("swarm-100", 100), ("swarm-500", 500), ("swarm-1000", 1000)):
+            with self.subTest(key=key):
+                config = builtin_scenario(key)
+                self.assertEqual(config.scenario_id, key)
+                self.assertEqual(len(config.satellites), count)
+                # Stable, unique ids: array order is never identity.
+                self.assertEqual(len({s.id for s in config.satellites}), count)
+                # Walker-delta shell: fixed planes, one satellite per anomaly slot.
+                self.assertEqual(
+                    len({round(s.orbit.raan_deg, 6) for s in config.satellites}),
+                    FLEET_PLANES[key],
+                )
+                self.assertEqual(len({round(s.orbit.true_anomaly_deg, 6) for s in config.satellites}), count)
+                self.assertEqual(config.dynamics_model, "keplerian-two-body")
+
+    def test_generated_scenarios_are_deterministic_config_only(self):
+        first = walker_delta_payload(100, planes=10)
+        second = walker_delta_payload(100, planes=10)
+        self.assertEqual(first, second)
+        # The payload is data: no expression language, no seeded randomness that
+        # would make a rerun on the same core produce a different fleet.
+        satellites = first["satellites"]
+        self.assertEqual(len({sat["id"] for sat in satellites}), 100)
+        self.assertTrue(all(isinstance(sat["orbit"]["raan_deg"], float) for sat in satellites))
 
 
 class TestScenarioApi(unittest.TestCase):
@@ -95,6 +127,16 @@ class TestScenarioApi(unittest.TestCase):
         # Generous bound: at the scenario's 60x scale this is well under a second
         # of wall time, so a slow machine can not make a restart look like a keep.
         self.assertLess(snap["clock"]["simulation_time_s"], 50.0)
+        self._reset()
+
+    def test_load_thousand_satellite_scenario(self):
+        res, payload = self._request("POST", "/api/scenario", json.dumps({"key": "swarm-1000"}))
+        self.assertEqual(res.status, 200)
+        self.assertEqual(len(payload["scenario"]["satellites"]), 1000)
+        res, snap = self._request("GET", "/api/state")
+        self.assertEqual(res.status, 200)
+        self.assertEqual(len(snap["snapshot"]["satellites"]), 1000)
+        self.assertEqual(len({s["id"] for s in snap["snapshot"]["satellites"]}), 1000)
         self._reset()
 
     def test_unknown_key_is_a_structured_404(self):

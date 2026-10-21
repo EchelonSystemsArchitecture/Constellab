@@ -7,6 +7,7 @@ clock and orbital state; the renderer only displays the snapshots it is given.
 from __future__ import annotations
 
 import json
+import math
 import platform
 import re
 import sys
@@ -259,6 +260,7 @@ class CoreHandler(BaseHTTPRequestHandler):
                             paused=True,
                         )
                         self.server.clock = clock
+                        self.server.sync_advance_rate()
                 elif route == "clock_resume":
                     if clock.paused:
                         clock = SimulationClock(
@@ -268,6 +270,7 @@ class CoreHandler(BaseHTTPRequestHandler):
                             paused=False,
                         )
                         self.server.clock = clock
+                        self.server.sync_advance_rate()
                 elif route == "clock_reset":
                     epoch = self.server.scenario.initial_clock()
                     clock = SimulationClock(
@@ -277,6 +280,7 @@ class CoreHandler(BaseHTTPRequestHandler):
                         paused=epoch.paused,
                     )
                     self.server.clock = clock
+                    self.server.sync_advance_rate()
                 elif route == "clock_step":
                     # Single step: advance by one simulation second (regardless of time_scale)
                     clock = SimulationClock(
@@ -286,12 +290,16 @@ class CoreHandler(BaseHTTPRequestHandler):
                         paused=clock.paused,
                     )
                     self.server.clock = clock
+                    self.server.sync_advance_rate()
                 elif route == "clock_time_scale":
                     new_scale = payload.get("time_scale")
                     if not isinstance(new_scale, (int, float)) or isinstance(new_scale, bool) or new_scale <= 0:
                         self._error(400, "invalid_time_scale", "time_scale must be a positive number")
                         return
-                    # Clamp to reasonable bounds
+                    # Clamp to the documented bound and report it at once: the
+                    # requested rate is now the clock's scale. Only how fast
+                    # simulated time *advances* eases into it (see the advance
+                    # loop), so the UI and the replied clock never lag behind.
                     new_scale = max(0.001, min(1_000_000, new_scale))
                     clock = SimulationClock(
                         epoch_utc=clock.epoch_utc,
@@ -359,6 +367,7 @@ class CoreHandler(BaseHTTPRequestHandler):
             self.server.scenario = config
             clock = running_clock(config)
             self.server.clock = clock
+            self.server.sync_advance_rate()
             revision = self.server.bump_revision()  # under the clock lock
 
         self._send(200, {
@@ -368,6 +377,11 @@ class CoreHandler(BaseHTTPRequestHandler):
             "clock": clock.to_dict(),
             "source": source,
         })
+
+
+# Wall-clock time constant for easing the simulated advance rate into a new
+# time-warp. ~0.4 s reads as immediate but never sees a jump.
+TIME_SCALE_EASE_S = 0.4
 
 
 class CoreServer(ThreadingHTTPServer):
@@ -385,6 +399,11 @@ class CoreServer(ThreadingHTTPServer):
         self._clock_lock = threading.Lock()
         self._advance_thread: threading.Thread | None = None
         self._stop_advance = threading.Event()
+        # Rate simulated time currently advances at. It eases toward
+        # ``clock.time_scale`` so a warp change never jerks the clock, but it is
+        # snapped whenever the clock is re-seated (pause/resume/reset/step/load)
+        # so a paused-to-running transition starts at exactly the requested rate.
+        self._advance_rate: float = self.clock.time_scale
 
     def bump_revision(self) -> int:
         """Advance the state revision. Callers hold ``_clock_lock``."""
@@ -402,6 +421,10 @@ class CoreServer(ThreadingHTTPServer):
         if self._advance_thread:
             self._advance_thread.join(timeout=1.0)
 
+    def sync_advance_rate(self) -> None:
+        """Re-seat the advance rate to the clock's scale. Callers hold the lock."""
+        self._advance_rate = self.clock.time_scale
+
     def _advance_loop(self):
         last_wall = time.monotonic()
         while not self._stop_advance.is_set():
@@ -411,10 +434,20 @@ class CoreServer(ThreadingHTTPServer):
             last_wall = now
             with self._clock_lock:
                 if not self.clock.paused:
+                    target = self.clock.time_scale
+                    # Frame-rate independent exponential approach: after
+                    # TIME_SCALE_EASE_S of simulated wall time the rate has
+                    # covered ~63% of the gap, whatever the tick spacing. This
+                    # is what makes a warp change read as a smooth ramp instead
+                    # of a step, and it converges for any jump (1× <-> 10^6×).
+                    weight = 1.0 - math.exp(-dt / TIME_SCALE_EASE_S)
+                    self._advance_rate += (target - self._advance_rate) * weight
+                    if abs(target - self._advance_rate) <= abs(target) * 1e-3:
+                        self._advance_rate = target
                     self.clock = SimulationClock(
                         epoch_utc=self.clock.epoch_utc,
-                        simulation_time_s=self.clock.simulation_time_s + dt * self.clock.time_scale,
-                        time_scale=self.clock.time_scale,
+                        simulation_time_s=self.clock.simulation_time_s + dt * self._advance_rate,
+                        time_scale=target,
                         paused=self.clock.paused,
                     )
                     self.bump_revision()
@@ -440,5 +473,6 @@ def serve(host: str = "127.0.0.1", port: int = 0, scenario: SimulationConfig | N
     server = CoreServer((host, port), CoreHandler)
     server.scenario = scenario or builtin_scenario()  # type: ignore[attr-defined]
     server.clock = running_clock(server.scenario)
+    server.sync_advance_rate()
     server.start_advance()
     return server

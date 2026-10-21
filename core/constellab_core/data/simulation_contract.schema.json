@@ -1,8 +1,8 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://constellab.ai/schemas/simulation_contract/1.0.0",
+  "$id": "https://constellab.ai/schemas/simulation_contract/1.1.0",
   "title": "ConstellaLab simulation/visualization contract",
-  "x-schema-version": "1.0.0",
+  "x-schema-version": "1.1.0",
   "x-ui": {
     "SimulationConfig.schema_version": { "label": "Schema version", "readOnly": true },
     "SimulationConfig.scenario_id": { "label": "Scenario id", "readOnly": true },
@@ -10,6 +10,7 @@
     "SimulationConfig.seed": { "label": "Master seed", "step": 1 },
     "SimulationConfig.time_scale": { "label": "Time scale", "unit": "×", "step": 1 },
     "SimulationConfig.epoch_utc": { "label": "Epoch (UTC)", "readOnly": true },
+    "SimulationConfig.dynamics_model": { "label": "Dynamics model", "readOnly": true },
     "SatelliteConfig.id": { "label": "Entity id", "readOnly": true },
     "OrbitElements.semi_major_axis_km": { "label": "Semi-major axis", "unit": "km", "step": 0.001 },
     "OrbitElements.eccentricity": { "label": "Eccentricity", "step": 0.0001 },
@@ -107,6 +108,7 @@
         "seed": { "type": "integer", "minimum": 0, "maximum": 9007199254740991, "description": "Master seed; must round-trip through IEEE doubles." },
         "epoch_utc": { "$ref": "#/$defs/UtcTimestamp" },
         "time_scale": { "type": "number", "exclusiveMinimum": 0, "maximum": 1000000, "default": 1 },
+        "dynamics_model": { "type": "string", "minLength": 1, "maxLength": 64, "default": "keplerian-two-body", "description": "Key of the registered dynamics component that propagates this scenario. Validated against the core's model registry; the default is the analytic two-body Kepler model." },
         "satellites": {
           "type": "array",
           "items": { "$ref": "#/$defs/SatelliteConfig" },

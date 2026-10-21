@@ -1,0 +1,63 @@
+{
+  "generated_at": "2026-10-21T14:53:13.137Z",
+  "method": "FleetRenderer.setSnapshot over 120 real core snapshots (scene batching; excludes GPU draw)",
+  "environment": {
+    "node": "v24.21.0",
+    "platform": "win32",
+    "arch": "x64",
+    "cpu": "Intel(R) Core(TM) Ultra 5 228V",
+    "cores": 8,
+    "total_memory_gb": 31.5,
+    "machine": "win32 10.0.26200"
+  },
+  "results": [
+    {
+      "scenario": "swarm-100",
+      "satellites": 100,
+      "snapshots": 120,
+      "mean_ms": 0.124,
+      "p50_ms": 0.103,
+      "p95_ms": 0.295,
+      "max_ms": 0.459,
+      "markers": 100,
+      "unique_orbits": 10,
+      "orbit_paths": 10,
+      "path_segments": 72,
+      "marker_detail": "low",
+      "scene_objects": 12,
+      "heap_delta_mb": 3.63
+    },
+    {
+      "scenario": "swarm-500",
+      "satellites": 500,
+      "snapshots": 120,
+      "mean_ms": 0.44,
+      "p50_ms": 0.4,
+      "p95_ms": 0.692,
+      "max_ms": 1.916,
+      "markers": 500,
+      "unique_orbits": 20,
+      "orbit_paths": 20,
+      "path_segments": 48,
+      "marker_detail": "low",
+      "scene_objects": 22,
+      "heap_delta_mb": 14.82
+    },
+    {
+      "scenario": "swarm-1000",
+      "satellites": 1000,
+      "snapshots": 120,
+      "mean_ms": 2.408,
+      "p50_ms": 1.224,
+      "p95_ms": 3.814,
+      "max_ms": 93.41,
+      "markers": 1000,
+      "unique_orbits": 25,
+      "orbit_paths": 25,
+      "path_segments": 48,
+      "marker_detail": "low",
+      "scene_objects": 27,
+      "heap_delta_mb": 0.41
+    }
+  ]
+}

@@ -29,6 +29,11 @@ from .contract import (
 MU_EARTH_KM3_S2 = 398600.4418
 EARTH_RADIUS_KM = 6378.137
 
+# Real-world Earth values
+SECONDS_PER_EARTH_SIDEREAL_DAY = 86164.0905  # mean sidereal day, IAU/USNO convention
+EARTH_AXIAL_TILT_DEG = 23.44  # obliquity of the ecliptic, WGS 84 / IAU 2006
+EARTH_ROTATION_DEG_PER_HOUR = 360.0 / (SECONDS_PER_EARTH_SIDEREAL_DAY / 3600.0)  # 15.041°
+
 
 def _rot_z(v: Vector3, angle: float) -> Vector3:
     c, s = math.cos(angle), math.sin(angle)
@@ -116,15 +121,41 @@ def state_from_elements(elements: OrbitElements) -> tuple[Vector3, Vector3]:
     return _state_from_true_anomaly(elements, math.radians(elements.true_anomaly_deg))
 
 
+def earth_rotation_angle_rad(time_s: float) -> float:
+    """Earth rotation angle (radians) at ``time_s`` seconds since the epoch.
+
+    One full 360° turn takes a mean sidereal day (86 164.0905 s), so this is the
+    real-world spin of the planet relative to the inertial frame: an observer on
+    the ground sweeps 15.041° of ECI longitude per hour. The ECI frame itself
+    does **not** rotate — satellites stay inertial there — so this angle is the
+    link between ECI and Earth-fixed (latitude/longitude) coordinates.
+
+    Renderers use it to spin the globe, and ground tracks subtract it to turn an
+    inertial longitude into a geographic one.
+    """
+    return math.remainder((time_s / SECONDS_PER_EARTH_SIDEREAL_DAY) * 2.0 * math.pi, 2.0 * math.pi)
+
+
 def state_from_elements_at_time(elements: OrbitElements, time_s: float) -> tuple[Vector3, Vector3]:
-    """Return (position_km, velocity_km_s) in ECI at ``time_s`` since epoch."""
+    """Return (position_km, velocity_km_s) in ECI at ``time_s`` since epoch.
+
+    The inertial frame is fixed at epoch, so only the orbit changes with time;
+    the planet's spin is reported separately by :func:`earth_rotation_angle_rad`
+    and must not be applied here (that would double-count it in ECI).
+    """
     return _state_from_true_anomaly(elements, math.radians(true_anomaly_at_time(elements, time_s)))
 
 
 def _satellite_states(config: SimulationConfig, time_s: float) -> list[SatelliteState]:
+    # Day 15: the state comes from the scenario's registered dynamics component,
+    # so a future fidelity level is a registry entry instead of a main-loop edit.
+    # Imported here to keep ``dynamics`` free to depend on this module's math.
+    from .dynamics import DEFAULT_MODEL_KEY, dynamics_model
+
+    model = dynamics_model(config.dynamics_model or DEFAULT_MODEL_KEY)
     satellites = []
     for sat in config.satellites:
-        position, velocity = state_from_elements_at_time(sat.orbit, time_s)
+        position, velocity = model.state_at(sat.orbit, time_s)
         satellites.append(SatelliteState(
             id=sat.id,
             position_eci_km=tuple(round(x, 6) for x in position),

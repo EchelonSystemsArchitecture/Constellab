@@ -854,17 +854,17 @@ button:focus-visible {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 18px;
+  gap: 16px;
   text-align: center;
   margin-bottom: 4px;
 }
 
 .startup-hero__symbol {
-  width: 96px;
-  height: 96px;
+  width: 130px;
+  height: 130px;
   display: block;
   margin: 0 auto;
-  filter: brightness(0) invert(1) drop-shadow(0 0 16px rgba(0, 0, 0, 0.95)) drop-shadow(0 0 32px rgba(0, 0, 0, 0.85));
+  filter: brightness(0) invert(1) drop-shadow(0 0 16px rgba(0, 0, 0, 0.95));
   flex-shrink: 0;
   transition: transform 0.25s ease;
 }
@@ -885,13 +885,7 @@ button:focus-visible {
   text-align: center;
   -webkit-text-stroke: 1.5px rgba(0, 0, 0, 0.95);
   paint-order: stroke fill;
-  text-shadow:
-    0 0 16px rgba(0, 0, 0, 0.95),
-    0 3px 28px rgba(0, 0, 0, 0.95),
-    -1.5px -1.5px 0 #000000,
-    1.5px -1.5px 0 #000000,
-    -1.5px 1.5px 0 #000000,
-    1.5px 1.5px 0 #000000;
+  text-shadow: 0 0 16px rgba(0, 0, 0, 0.95);
 }
 
 .startup-hero__tagline {
@@ -2873,4 +2867,154 @@ button:focus-visible {
   font-size: 9.5px;
   color: var(--color-anomaly-coral);
   line-height: 1.5;
+}
+
+/* --- Day 12: visual diagnostics + link state ---------------------------- */
+
+.scene-shell__diagnostics {
+  position: absolute;
+  top: 74px;
+  left: 76px;
+  z-index: 21;
+  width: 264px;
+  padding: 10px 12px 12px;
+  background: rgba(8, 11, 20, 0.88);
+  border: 1px solid rgba(27, 43, 74, 0.9);
+  border-radius: 4px;
+  backdrop-filter: blur(10px);
+  pointer-events: auto;
+}
+
+.diagnostics__header {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(27, 43, 74, 0.7);
+}
+
+.diagnostics__title {
+  flex: 1;
+  font-family: var(--font-chakra);
+  font-size: 10px;
+  letter-spacing: 1.6px;
+  color: var(--color-starlight);
+}
+
+.diagnostics__toggles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 8px 0;
+}
+
+.diagnostics-toggle {
+  font-family: var(--font-chakra);
+  font-size: 9px;
+  letter-spacing: 0.8px;
+  padding: 3px 7px;
+  color: var(--color-telemetry-grey);
+  background: rgba(27, 43, 74, 0.35);
+  border: 1px solid rgba(27, 43, 74, 0.9);
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.diagnostics-toggle--on {
+  color: var(--color-pale-aurora);
+  border-color: var(--color-ion-teal);
+  background: rgba(111, 155, 151, 0.18);
+}
+
+.diagnostics__rows {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.diagnostics-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 9.5px;
+  line-height: 1.5;
+}
+
+.diagnostics-row dt {
+  font-family: var(--font-chakra);
+  letter-spacing: 0.9px;
+  color: var(--color-telemetry-grey);
+  white-space: nowrap;
+}
+
+.diagnostics-row dd {
+  margin: 0;
+  color: var(--color-starlight);
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+.diagnostics-row--ok dd { color: var(--color-pale-aurora); }
+.diagnostics-row--warn dd { color: var(--color-solar-gold); }
+.diagnostics-row--bad dd { color: var(--color-anomaly-coral); }
+.diagnostics-row--muted dd { color: var(--color-starlight); }
+
+.diagnostic-labels {
+  position: absolute;
+  inset: 0;
+  z-index: 11;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.diagnostic-label {
+  position: absolute;
+  transform: translateY(-50%);
+  font-size: 9px;
+  letter-spacing: 0.5px;
+  padding: 1px 4px;
+  background: rgba(8, 11, 20, 0.72);
+  border-left: 1px solid currentColor;
+  border-radius: 2px;
+  white-space: nowrap;
+}
+
+.diagnostic-label--selected {
+  font-weight: 700;
+  background: rgba(8, 11, 20, 0.92);
+}
+
+.scene-shell__connection {
+  position: absolute;
+  top: 58px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 22;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 12px;
+  background: rgba(8, 11, 20, 0.92);
+  border: 1px solid rgba(240, 199, 119, 0.5);
+  border-radius: 4px;
+  font-family: var(--font-chakra);
+  font-size: 9.5px;
+  letter-spacing: 1px;
+  pointer-events: none;
+  max-width: min(760px, calc(100% - 120px));
+}
+
+.scene-shell__connection--down,
+.scene-shell__connection--invalid {
+  border-color: rgba(255, 118, 95, 0.65);
+}
+
+.scene-shell__connection-text {
+  color: var(--color-telemetry-grey);
+  letter-spacing: 0;
+  font-size: 10px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }

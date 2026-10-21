@@ -1,6 +1,6 @@
 import {
   AmbientLight, Color, DirectionalLight, Mesh, MeshStandardMaterial, Scene, SphereGeometry,
-  RepeatWrapping,
+  RepeatWrapping, Vector3,
 } from "three";
 import type { SceneAssets } from "./assets";
 import { SCENE_CONFIG } from "./config";
@@ -32,12 +32,35 @@ export function createEarthWorld(assets: SceneAssets) {
   scene.add(earth);
   scene.add(new AmbientLight(config.lighting.ambientColor, config.lighting.ambientIntensity));
   const sun = new DirectionalLight(config.lighting.sunColor, config.lighting.sunIntensity);
+  const sunBase = new Vector3(...config.lighting.sunPosition);
+  // Keep the configured azimuth and distance; only the height above the equator
+  // (the solar declination) is real, so it is driven from the simulated date.
+  const sunAzimuth = Math.atan2(sunBase.y, sunBase.x);
+  const sunDistance = sunBase.length();
   sun.position.set(...config.lighting.sunPosition);
   scene.add(sun);
+
+  /**
+   * Place the Sun at a real declination, in degrees, measured from the equator.
+   * In this Z-up ECI scene a positive declination lights the north pole, so the
+   * terminator tilts exactly as the obliquity of the ecliptic dictates.
+   */
+  function setSunDeclinationDeg(declinationDeg: number) {
+    const dec = (declinationDeg * Math.PI) / 180;
+    const equatorial = Math.cos(dec);
+    sun.position.set(
+      sunDistance * equatorial * Math.cos(sunAzimuth),
+      sunDistance * equatorial * Math.sin(sunAzimuth),
+      sunDistance * Math.sin(dec),
+    );
+  }
+
   let disposed = false;
   return {
     scene,
     earth,
+    sun,
+    setSunDeclinationDeg,
     dispose() {
       if (disposed) return;
       disposed = true;

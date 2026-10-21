@@ -199,6 +199,8 @@ class SimulationConfig(ContractModel):
     satellites: list[SatelliteConfig] = field(default_factory=list)
     name: str | None = None
     time_scale: float = 1.0
+    # Day 15: registered dynamics component; None means the default model.
+    dynamics_model: str | None = None
 
     @property
     def label(self) -> str:

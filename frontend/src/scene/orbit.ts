@@ -1,24 +1,14 @@
 import {
   BufferGeometry,
   Float32BufferAttribute,
-  Line,
-  LineBasicMaterial,
-  Mesh,
-  MeshBasicMaterial,
-  RingGeometry,
-  SphereGeometry,
   Vector3,
 } from "three";
-import type { OrbitElements, SatelliteState, SatelliteConfig, Vector3Km } from "../contract";
+import type { OrbitElements, Vector3Km } from "../contract";
 import { SCENE_CONFIG } from "./config";
 
-export interface SatelliteVisuals {
-  orbitLine: Line;
-  satelliteMesh: Mesh;
-}
-
 const KM_PER_SCENE_UNIT = SCENE_CONFIG.units.kmPerSceneUnit;
-const SEGMENTS = 180;
+/** Default tessellation of a drawn orbit path (4-satellite / small fleets). */
+export const SEGMENTS = 180;
 
 /**
  * Map an Earth-centred inertial position (km, +Z = north) to scene units.
@@ -64,16 +54,52 @@ export function satellitePositionFromOrbit(orbit: OrbitElements, trueAnomalyDeg:
   return eciToScene([x, y, z]);
 }
 
-export function createOrbitGeometry(orbit: OrbitElements): BufferGeometry {
-  const positions = new Float32Array((SEGMENTS + 1) * 3);
-  for (let i = 0; i <= SEGMENTS; i++) {
-    const nu = (i / SEGMENTS) * Math.PI * 2;
+export function createOrbitGeometry(orbit: OrbitElements, segments: number = SEGMENTS): BufferGeometry {
+  const count = Math.max(8, Math.floor(segments));
+  const positions = new Float32Array((count + 1) * 3);
+  for (let i = 0; i <= count; i++) {
+    const nu = (i / count) * Math.PI * 2;
     const r = radiusAtTrueAnomaly(orbit, nu);
     const [x, y, z] = perifocalToEci(r * Math.cos(nu), r * Math.sin(nu), orbit);
     const point = eciToScene([x, y, z]);
     positions[i * 3] = point.x;
     positions[i * 3 + 1] = point.y;
     positions[i * 3 + 2] = point.z;
+  }
+  const geometry = new BufferGeometry();
+  geometry.setAttribute("position", new Float32BufferAttribute(positions, 3));
+  return geometry;
+}
+
+/**
+ * Translucent triangle fan filling an orbit's plane, for the "orbit plane"
+ * diagnostic overlay. The vertices are the same conic points as the path, so the
+ * plane can never disagree with the drawn trajectory.
+ */
+export function createOrbitPlaneGeometry(orbit: OrbitElements, segments = 96): BufferGeometry {
+  const count = Math.max(8, Math.floor(segments));
+  const vertices: number[] = [];
+  for (let i = 0; i < count; i++) {
+    const nu = (i / count) * Math.PI * 2;
+    const r = radiusAtTrueAnomaly(orbit, nu);
+    const [x, y, z] = perifocalToEci(r * Math.cos(nu), r * Math.sin(nu), orbit);
+    const point = eciToScene([x, y, z]);
+    vertices.push(point.x, point.y, point.z);
+  }
+  // Triangle fan around the orbit centroid (the focus for a two-body ellipse).
+  const center = new Vector3();
+  for (let i = 0; i < count; i++) {
+    center.x += vertices[i * 3];
+    center.y += vertices[i * 3 + 1];
+    center.z += vertices[i * 3 + 2];
+  }
+  center.divideScalar(count);
+  const positions: number[] = [];
+  for (let i = 0; i < count; i++) {
+    const next = (i + 1) % count;
+    positions.push(center.x, center.y, center.z);
+    positions.push(vertices[i * 3], vertices[i * 3 + 1], vertices[i * 3 + 2]);
+    positions.push(vertices[next * 3], vertices[next * 3 + 1], vertices[next * 3 + 2]);
   }
   const geometry = new BufferGeometry();
   geometry.setAttribute("position", new Float32BufferAttribute(positions, 3));
@@ -106,45 +132,4 @@ export function getSatelliteColor(index: number): number {
     BRAND_COLORS.starlight,     // Sat 6: Starlight
   ];
   return colors[index % colors.length];
-}
-
-export function createSatelliteVisuals(sat: SatelliteState | SatelliteConfig, color: number): SatelliteVisuals {
-  const orbit = sat.orbit!;
-
-  // Luminous tactical orbit path with subtle glow opacity
-  const orbitLine = new Line(
-    createOrbitGeometry(orbit),
-    new LineBasicMaterial({
-      color,
-      transparent: true,
-      opacity: 0.72,
-    }),
-  );
-
-  // Tactical aerospace satellite glyph: central sensor core + tactical reticle ring
-  const satelliteMesh = new Mesh(
-    new SphereGeometry(0.024, 16, 16),
-    new MeshBasicMaterial({ color }),
-  );
-
-  // Outer aerospace telemetry diamond/bracket
-  const ringGeom = new RingGeometry(0.032, 0.042, 4);
-  const ringMat = new MeshBasicMaterial({
-    color,
-    transparent: true,
-    opacity: 0.85,
-    wireframe: true,
-  });
-  const ringMesh = new Mesh(ringGeom, ringMat);
-  ringMesh.rotation.z = Math.PI / 4; // Diamond orientation
-  satelliteMesh.add(ringMesh);
-
-  // Position at current ECI or epoch
-  satelliteMesh.position.copy(
-    "position_eci_km" in sat
-      ? eciToScene(sat.position_eci_km)
-      : satellitePositionFromOrbit(orbit, orbit.true_anomaly_deg),
-  );
-
-  return { orbitLine, satelliteMesh };
 }

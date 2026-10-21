@@ -1,6 +1,8 @@
 import { useEffect, useRef } from "react";
 import type { SnapshotState } from "../App";
 import { getSatelliteColor } from "./orbit";
+import { SCENE_CONFIG } from "./config";
+import { eciLatitudeDeg, eciLongitudeDeg, orbitalPeriodS } from "./earth";
 
 interface GroundTrackMapProps {
   snapshot: SnapshotState;
@@ -11,6 +13,8 @@ interface GroundTrackMapProps {
 
 const km = (v: number) => v.toFixed(1);
 const kms = (v: number) => v.toFixed(2);
+const DEG = 180 / Math.PI;
+const wrapLon = (deg: number) => ((((deg + 180) % 360) + 360) % 360) - 180;
 
 export function GroundTrackMap({
   snapshot,
@@ -96,17 +100,22 @@ export function GroundTrackMap({
       // 3. Draw Satellites and Orbital Ground Tracks
       if (snapshot.kind === "ready") {
         const satellites = snapshot.snapshot.satellites;
+        const simTimeS = snapshot.snapshot.clock.simulation_time_s;
+        const siderealDayS = SCENE_CONFIG.units.secondsPerEarthSiderealDay;
 
         satellites.forEach((sat, i) => {
           const [x, y, z] = sat.position_eci_km;
           const [vx, vy, vz] = sat.velocity_eci_km_s;
           const r = Math.sqrt(x * x + y * y + z * z);
           const vel = Math.sqrt(vx * vx + vy * vy + vz * vz);
-          const alt = r - 6371;
+          const alt = r - SCENE_CONFIG.units.kmPerSceneUnit;
 
-          // Spherical ECI coordinates to Sub-Satellite Lat/Lon
-          const lat = Math.asin(z / r) * (180 / Math.PI);
-          const lon = Math.atan2(y, x) * (180 / Math.PI);
+          // Lat is the same in both frames; longitude must subtract the angle
+          // Earth has turned through, or the marker sits forever over the same
+          // ground point while the planet spins underneath it.
+          const lat = eciLatitudeDeg(sat.position_eci_km);
+          const inertialLon = Math.atan2(y, x) * DEG;
+          const lon = eciLongitudeDeg(sat.position_eci_km, simTimeS);
 
           const satX = ((lon + 180) / 360) * width;
           const satY = ((90 - lat) / 180) * height;
@@ -123,11 +132,16 @@ export function GroundTrackMap({
             ctx.globalAlpha = isSelected ? 0.45 : 0.22;
             ctx.lineWidth = isSelected ? 1.75 : 1;
             ctx.setLineDash([4, 4]);
+            const periodS = orbitalPeriodS(sat.orbit.semi_major_axis_km);
             ctx.beginPath();
             let first = true;
             for (let t = -180; t <= 180; t += 3) {
-              const trackLon = (lon + t + 540) % 360 - 180;
-              const trackLat = Math.asin(Math.sin(inc) * Math.sin((t * Math.PI) / 180)) * (180 / Math.PI);
+              // One orbit spans a full 360° of inertial longitude, but the ground
+              // under it slides east-to-west by the planet's spin over the same
+              // seconds, so the plotted swath drifts westward each pass.
+              const trackSpinDeg = ((t / 360) * periodS * 360) / siderealDayS;
+              const trackLon = wrapLon(inertialLon + t - trackSpinDeg);
+              const trackLat = Math.asin(Math.sin(inc) * Math.sin((t * Math.PI) / 180)) * DEG;
               const px = ((trackLon + 180) / 360) * width;
               const py = ((90 - trackLat) / 180) * height;
               if (first) {
@@ -221,11 +235,10 @@ export function GroundTrackMap({
       let closestSat: string | null = null;
       let closestDist = 25; // Click radius threshold
 
+      const simTimeS = snapshot.snapshot.clock.simulation_time_s;
       snapshot.snapshot.satellites.forEach((sat) => {
-        const [x, y, z] = sat.position_eci_km;
-        const r = Math.sqrt(x * x + y * y + z * z);
-        const lat = Math.asin(z / r) * (180 / Math.PI);
-        const lon = Math.atan2(y, x) * (180 / Math.PI);
+        const lat = eciLatitudeDeg(sat.position_eci_km);
+        const lon = eciLongitudeDeg(sat.position_eci_km, simTimeS);
         const sx = ((lon + 180) / 360) * rect.width;
         const sy = ((90 - lat) / 180) * rect.height;
 

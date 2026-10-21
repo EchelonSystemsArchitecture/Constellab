@@ -2,6 +2,7 @@ node_modules/
 dist/
 frontend/dist/
 frontend/.test-out/
+frontend/.bench-out/
 dist-electron/
 python/
 __pycache__/

@@ -26,8 +26,11 @@ from constellab_core.contract import (  # noqa: E402
     is_compatible_version,
 )
 from constellab_core.orbit import (  # noqa: E402
+    EARTH_AXIAL_TILT_DEG,
     EARTH_RADIUS_KM,
     MU_EARTH_KM3_S2,
+    SECONDS_PER_EARTH_SIDEREAL_DAY,
+    earth_rotation_angle_rad,
     initial_snapshot,
     mean_motion_rad_s,
     orbital_period_s,
@@ -101,13 +104,15 @@ class TestVersionCompatibility(unittest.TestCase):
 class TestFixtures(unittest.TestCase):
     def test_builtin_scenarios_round_trip(self):
         for name, path in BUILTIN_SCENARIOS.items():
-            raw = _load(path)
-            config = load_config(raw)
+            # Generated large-fleet scenarios have no file on disk (Day 11).
+            raw = _load(path) if path is not None else None
+            config = builtin_scenario(name) if raw is None else load_config(raw)
             self.assertEqual(config.scenario_id, name)
             self.assertEqual(SimulationConfig.from_dict(config.to_dict()), config)
             self.assertEqual(SimulationConfig.from_json(config.to_json()), config)
-            # defaults are applied on the way in, so to_dict() is a superset of the file
-            self.assertEqual({k: v for k, v in config.to_dict().items() if k in raw}, raw)
+            if raw is not None:
+                # defaults are applied on the way in, so to_dict() is a superset of the file
+                self.assertEqual({k: v for k, v in config.to_dict().items() if k in raw}, raw)
 
     def test_empty_scenario_snapshot(self):
         snapshot = initial_snapshot(builtin_scenario("empty"))
@@ -239,6 +244,46 @@ class TestOrbitPropagation(unittest.TestCase):
         first = state_from_elements_at_time(sat.orbit, 0.0)[0]
         later = state_from_elements_at_time(sat.orbit, 600.0)[0]
         self.assertNotEqual(tuple(round(x, 6) for x in first), tuple(round(x, 6) for x in later))
+
+    def test_earth_spin_is_not_applied_inside_the_inertial_frame(self):
+        """ECI is fixed at epoch: only the orbit may move a satellite in it.
+
+        A circular equatorial orbit is the sharpest check: its argument of
+        latitude must advance by exactly mean-motion x time. Any hidden Earth
+        spin (2.5° over 600 s) shows up immediately as a mismatch.
+        """
+        elements = OrbitElements(
+            semi_major_axis_km=7000.0,
+            eccentricity=0.0,
+            inclination_deg=0.0,
+            raan_deg=0.0,
+            argument_of_perigee_deg=0.0,
+            true_anomaly_deg=0.0,
+        )
+        elapsed = 600.0
+        position, velocity = state_from_elements_at_time(elements, elapsed)
+        latitude_longitude = math.degrees(math.atan2(position[1], position[0]))
+        expected = math.degrees(mean_motion_rad_s(elements) * elapsed)
+        self.assertAlmostEqual(latitude_longitude, expected, places=6)
+        # Speed is unchanged by any rotation, so this pins the magnitude too.
+        self.assertAlmostEqual(
+            math.sqrt(sum(v * v for v in velocity)), math.sqrt(MU_EARTH_KM3_S2 / 7000.0), places=9
+        )
+
+    def test_earth_rotation_uses_the_real_sidereal_day(self):
+        self.assertEqual(SECONDS_PER_EARTH_SIDEREAL_DAY, 86164.0905)
+        self.assertEqual(EARTH_AXIAL_TILT_DEG, 23.44)
+        # 360° per sidereal day = 15.041° per hour of simulated time.
+        self.assertAlmostEqual(
+            math.degrees(earth_rotation_angle_rad(3600.0)), 15.0411, places=3
+        )
+        self.assertAlmostEqual(earth_rotation_angle_rad(0.0), 0.0, places=12)
+        # A full turn wraps to zero instead of growing without bound.
+        self.assertAlmostEqual(
+            earth_rotation_angle_rad(SECONDS_PER_EARTH_SIDEREAL_DAY * 3), 0.0, places=9
+        )
+        half = math.degrees(earth_rotation_angle_rad(SECONDS_PER_EARTH_SIDEREAL_DAY / 2))
+        self.assertAlmostEqual(half, 180.0, places=9)
 
 
 class TestHttpBridge(unittest.TestCase):

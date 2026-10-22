@@ -11,6 +11,7 @@ import { SceneDiagnostics } from "./SceneDiagnostics";
 import { DEFAULT_DIAGNOSTIC_TOGGLES, type DiagnosticToggles, snapshotAgeMs } from "./diagnostics";
 import { ScenarioCatalog } from "../scenario/ScenarioCatalog";
 import { ParameterEditor } from "../scenario/ParameterEditor";
+import { RegistryEditor } from "../scenario/RegistryEditor";
 import { getSatelliteColor } from "./orbit";
 import { SCENE_CONFIG } from "./config";
 
@@ -142,6 +143,9 @@ export function SceneShell({ snapshot, status, statusError, connection, snapshot
   const [isInspectorOpen, setIsInspectorOpen] = useState(false);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  // Day 22: the rail settings button opens either the contract-scaled schema
+  // editor or the registry-scale editor; both act on the same running scenario.
+  const [settingsMode, setSettingsMode] = useState<"schema" | "registry">("registry");
   const [isScenarioOpen, setIsScenarioOpen] = useState(false);
   const [autoRotate] = useState(true);
   const [showOverlays, setShowOverlays] = useState(true);
@@ -578,13 +582,43 @@ export function SceneShell({ snapshot, status, statusError, connection, snapshot
         />
       )}
 
-      {/* Day 9: schema-driven parameter editor, opened from the settings rail item */}
+      {/* Day 9 + Day 22: schema editor and registry-scale editor, one rail item */}
       {isSettingsOpen && (
-        <ParameterEditor
-          activeScenarioId={activeScenarioId}
-          onClose={() => setIsSettingsOpen(false)}
-          onApplied={() => setSelectedSatId(null)}
-        />
+        <div className="settings-panels" data-testid="settings-panels">
+          <div className="settings-panels__mode" role="tablist" aria-label="Parameter editor mode">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={settingsMode === "registry"}
+              className={settingsMode === "registry" ? "settings-panels__tab settings-panels__tab--active" : "settings-panels__tab"}
+              onClick={() => setSettingsMode("registry")}
+            >
+              REGISTRY
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={settingsMode === "schema"}
+              className={settingsMode === "schema" ? "settings-panels__tab settings-panels__tab--active" : "settings-panels__tab"}
+              onClick={() => setSettingsMode("schema")}
+            >
+              CONTRACT
+            </button>
+          </div>
+          {settingsMode === "registry" ? (
+            <RegistryEditor
+              activeScenarioId={activeScenarioId}
+              onClose={() => setIsSettingsOpen(false)}
+              onApplied={() => setSelectedSatId(null)}
+            />
+          ) : (
+            <ParameterEditor
+              activeScenarioId={activeScenarioId}
+              onClose={() => setIsSettingsOpen(false)}
+              onApplied={() => setSelectedSatId(null)}
+            />
+          )}
+        </div>
       )}
 
       {/* 4b. Telemetry Drawer (Right Slideout Inspector) */}

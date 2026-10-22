@@ -111,8 +111,24 @@ def registry_summary() -> dict[str, Any]:
 
 
 def registry_payload() -> dict[str, Any]:
-    """Everything typed, registered data the core is built from, in one reply."""
-    return registry_summary()
+    """Day 22: the full registry editor payload (one spec dict per parameter).
+
+    ``registry_summary`` keeps serving the compact Day 16-20 summary for
+    ``/api/status`` and ``registry``; this payload is what a scaled editor can
+    paginate, validate and hash against.
+    """
+    from .parameters import builtin_registry
+
+    parameters = builtin_registry()
+    version = parameters.payload()["schema_version"]
+    return {
+        "include": "constellab-registry",
+        "schema_version": version,
+        "schema_hash": parameters.schema_hash(),
+        "owners": parameters.owners(),
+        "count": len(parameters),
+        "parameters": [spec.to_dict() for spec in parameters.specs()],
+    }
 
 
 def _json_bytes(payload: Any) -> bytes:

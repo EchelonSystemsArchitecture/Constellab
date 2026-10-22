@@ -3018,3 +3018,266 @@ button:focus-visible {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/* Day 22: registry-scale parameter editor --------------------------------- */
+
+.settings-panels {
+  position: fixed;
+  top: 72px;
+  left: 84px;
+  z-index: 26;
+  width: 560px;
+  max-height: calc(100vh - 96px);
+  display: flex;
+  flex-direction: column;
+}
+
+.settings-panels__mode {
+  display: flex;
+  gap: 2px;
+  margin-bottom: 2px;
+}
+
+.settings-panels__tab {
+  flex: 1;
+  background: rgba(16, 24, 39, 0.85);
+  border: 1px solid rgba(27, 43, 74, 0.9);
+  border-bottom: none;
+  color: var(--color-telemetry-grey);
+  font-family: var(--font-chakra);
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  padding: 6px 0 4px;
+  cursor: pointer;
+}
+
+.settings-panels__tab--active {
+  background: rgba(27, 43, 74, 0.9);
+  color: var(--color-pale-aurora);
+}
+
+.registry-editor {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: rgba(8, 11, 20, 0.92);
+  border: 1px solid rgba(27, 43, 74, 0.9);
+  border-radius: 0 4px 4px 4px;
+  color: var(--color-starlight);
+}
+
+.registry-editor__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 12px 6px;
+  border-bottom: 1px solid rgba(27, 43, 74, 0.9);
+}
+
+.registry-editor__title {
+  font-family: var(--font-chakra);
+  font-size: 11px;
+  letter-spacing: 2px;
+  margin: 0;
+}
+
+.registry-editor__meta,
+.registry-editor__pager,
+.registry-editor__io,
+.registry-editor__actions,
+.registry-editor__field-meta {
+  color: var(--color-telemetry-grey);
+  font-family: var(--font-mono);
+  font-size: 10px;
+}
+
+.registry-editor__meta { margin: 4px 0 0; }
+.registry-editor__error { color: var(--color-anomaly-coral); font-size: 11px; }
+
+.registry-editor__close {
+  background: none;
+  border: 1px solid rgba(27, 43, 74, 0.9);
+  color: var(--color-telemetry-grey);
+  cursor: pointer;
+  border-radius: 3px;
+  padding: 2px 7px;
+}
+
+.registry-editor__controls {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  padding: 8px 12px;
+}
+
+.registry-editor__controls input[type="search"] {
+  flex: 1;
+}
+
+.registry-editor__toggle {
+  display: inline-flex;
+  gap: 5px;
+  align-items: center;
+  font-family: var(--font-chakra);
+  font-size: 10px;
+  letter-spacing: 1px;
+  color: var(--color-pale-aurora);
+}
+
+.registry-editor__issues {
+  margin: 0 12px 6px;
+  border: 1px solid rgba(255, 118, 95, 0.5);
+  border-radius: 4px;
+  padding: 6px 10px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  color: var(--color-anomaly-coral);
+}
+
+.registry-editor__issues ul { margin: 4px 0 0 16px; padding: 0; }
+
+.registry-editor__body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 0 12px;
+}
+
+.registry-editor__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+}
+
+.registry-editor__table th {
+  text-align: left;
+  font-family: var(--font-chakra);
+  font-size: 9.5px;
+  letter-spacing: 1.5px;
+  color: var(--color-telemetry-grey);
+  border-bottom: 1px solid rgba(27, 43, 74, 0.9);
+  padding: 4px 6px;
+}
+
+.registry-editor__table td {
+  vertical-align: top;
+  padding: 6px;
+  border-bottom: 1px solid rgba(27, 43, 74, 0.45);
+}
+
+.registry-editor__table tr.is-edited {
+  background: rgba(111, 155, 151, 0.08);
+}
+
+.registry-editor__field-label {
+  font-size: 11.5px;
+  color: var(--color-starlight);
+}
+
+.registry-editor__field-key { color: var(--color-spectral-lilac); font-size: 10px; }
+.registry-editor__field-help { color: var(--color-telemetry-grey); font-size: 10px; max-width: 300px; }
+
+.registry-editor__field-error {
+  color: var(--color-anomaly-coral);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  margin-top: 3px;
+}
+
+.registry-editor__table input,
+.registry-editor__table select,
+.registry-editor__controls input,
+.registry-editor__controls select {
+  background: #0d1322;
+  border: 1px solid rgba(27, 43, 74, 0.9);
+  color: var(--color-starlight);
+  border-radius: 3px;
+  padding: 3px 6px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+}
+
+.registry-editor__table td:nth-child(3) {
+  white-space: nowrap;
+  display: flex;
+  gap: 4px;
+}
+
+.registry-editor__table td:nth-child(3) button {
+  background: none;
+  border: 1px solid rgba(27, 43, 74, 0.9);
+  color: var(--color-telemetry-grey);
+  border-radius: 3px;
+  font-size: 10px;
+  padding: 2px 6px;
+  cursor: pointer;
+}
+
+.registry-editor__pager {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 0 10px;
+}
+
+.registry-editor__pager button {
+  background: none;
+  border: 1px solid rgba(27, 43, 74, 0.9);
+  color: var(--color-pale-aurora);
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.registry-editor__pager button:disabled { opacity: 0.4; cursor: default; }
+
+.registry-editor__hidden-edits { color: var(--color-solar-gold); }
+
+.registry-editor__footer {
+  border-top: 1px solid rgba(27, 43, 74, 0.9);
+  padding: 8px 12px 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.registry-editor__io,
+.registry-editor__actions {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
+.registry-editor__io button,
+.registry-editor__actions button {
+  background: rgba(27, 43, 74, 0.6);
+  border: 1px solid rgba(61, 104, 178, 0.7);
+  color: var(--color-starlight);
+  border-radius: 3px;
+  font-family: var(--font-chakra);
+  font-size: 10px;
+  letter-spacing: 1px;
+  padding: 4px 10px;
+  cursor: pointer;
+}
+
+.registry-editor__io button:disabled,
+.registry-editor__actions button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.registry-editor__apply {
+  background: rgba(61, 104, 178, 0.85) !important;
+}
+
+.registry-editor__import { position: relative; overflow: hidden; }
+.registry-editor__import input[type="file"] { position: absolute; inset: 0; opacity: 0; }
+
+.registry-editor__apply-message { width: 100%; font-family: var(--font-mono); font-size: 10px; }
+.registry-editor__apply-message--ok { color: var(--color-pale-aurora); }
+.registry-editor__apply-message--error { color: var(--color-anomaly-coral); }

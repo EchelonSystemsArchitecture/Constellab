@@ -1,0 +1,39 @@
+{
+  "owner": "compute.capacity",
+  "parameters": [
+    {
+      "key": "throughput_hz",
+      "kind": "number",
+      "label": "Throughput",
+      "unit": "Hz",
+      "default": 2500000000,
+      "minimum": 1000000,
+      "maximum": 100000000000000,
+      "distribution": "log-uniform",
+      "normalization": { "scale": 2500000000, "offset": 0.0 },
+      "update_cadence_s": 10,
+      "description": "Operations per second available to onboard autonomy."
+    },
+    {
+      "key": "duty_cycle_ratio",
+      "kind": "number",
+      "label": "Duty cycle",
+      "unit": "1",
+      "default": 0.65,
+      "minimum": 0,
+      "maximum": 1,
+      "update_cadence_s": 10,
+      "description": "Share of the throughput reserved for the simulation's task workload."
+    },
+    {
+      "key": "draw_w",
+      "kind": "number",
+      "label": "Power draw",
+      "unit": "W",
+      "default": 25,
+      "minimum": 0,
+      "maximum": 10000,
+      "update_cadence_s": 10
+    }
+  ]
+}

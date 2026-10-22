@@ -1,0 +1,17 @@
+{
+  "owner": "event-source.clock-tick",
+  "parameters": [
+    {
+      "key": "interval_s",
+      "kind": "number",
+      "label": "Tick interval",
+      "unit": "s",
+      "default": 60,
+      "minimum": 0.1,
+      "maximum": 86400,
+      "distribution": "log-uniform",
+      "update_cadence_s": 10,
+      "description": "Simulated seconds between deterministic tick events."
+    }
+  ]
+}

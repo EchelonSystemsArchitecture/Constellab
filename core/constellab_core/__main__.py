@@ -82,12 +82,19 @@ def _cmd_run(args: argparse.Namespace) -> int:
         time_scale=config.time_scale,
         paused=False,
     )
+    from . import components
+
+    # Day 18: component state advances along the same clock in a headless run.
+    runtime = components.initial_runtime(config)
     out = open(args.out, "w", encoding="utf-8") if args.out else sys.stdout
     started = time.perf_counter()
     try:
         for index in range(steps):
             t = index * args.step
-            snapshot = snapshot_at_time(config, t, clock)
+            snapshot = snapshot_at_time(config, t, clock, runtime=runtime)
+            if index + 1 < steps:
+                next_t = (index + 1) * args.step
+                components.advance_runtime(config, runtime, time_s=next_t, dt_s=next_t - t)
             record = {
                 "t": round(t, 6),
                 "scenario_id": snapshot.scenario_id,
@@ -97,6 +104,9 @@ def _cmd_run(args: argparse.Namespace) -> int:
                         "id": sat.id,
                         "position_eci_km": list(sat.position_eci_km),
                         "velocity_eci_km_s": list(sat.velocity_eci_km_s),
+                        **({"components": [
+                            {"type": c.type, "state": c.state} for c in sat.components
+                        ]} if sat.components else {}),
                     }
                     for sat in snapshot.satellites
                 ],

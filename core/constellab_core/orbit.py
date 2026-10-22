@@ -13,10 +13,19 @@ not mission-grade orbital propagation.
 from __future__ import annotations
 
 import math
+from typing import Any
 
 from . import __version__
+from .frames import (
+    EARTH_AXIAL_TILT_DEG,
+    EARTH_EQUATORIAL_RADIUS_KM,
+    SECONDS_PER_EARTH_SIDEREAL_DAY,
+    earth_rotation_angle_rad,
+)
+from . import components
 from .contract import (
     OrbitElements,
+    SatelliteComponentState,
     SatelliteState,
     SimulationClock,
     SimulationConfig,
@@ -26,12 +35,11 @@ from .contract import (
     SCHEMA_VERSION,
 )
 
+# Earth geometry lives in ``frames`` (Day 16) so orbits, ground tracks and
+# sensor geometry share one set of constants; these aliases keep the historical
+# import surface used by the renderer and the earlier test suites.
 MU_EARTH_KM3_S2 = 398600.4418
-EARTH_RADIUS_KM = 6378.137
-
-# Real-world Earth values
-SECONDS_PER_EARTH_SIDEREAL_DAY = 86164.0905  # mean sidereal day, IAU/USNO convention
-EARTH_AXIAL_TILT_DEG = 23.44  # obliquity of the ecliptic, WGS 84 / IAU 2006
+EARTH_RADIUS_KM = EARTH_EQUATORIAL_RADIUS_KM
 EARTH_ROTATION_DEG_PER_HOUR = 360.0 / (SECONDS_PER_EARTH_SIDEREAL_DAY / 3600.0)  # 15.041°
 
 
@@ -121,21 +129,6 @@ def state_from_elements(elements: OrbitElements) -> tuple[Vector3, Vector3]:
     return _state_from_true_anomaly(elements, math.radians(elements.true_anomaly_deg))
 
 
-def earth_rotation_angle_rad(time_s: float) -> float:
-    """Earth rotation angle (radians) at ``time_s`` seconds since the epoch.
-
-    One full 360° turn takes a mean sidereal day (86 164.0905 s), so this is the
-    real-world spin of the planet relative to the inertial frame: an observer on
-    the ground sweeps 15.041° of ECI longitude per hour. The ECI frame itself
-    does **not** rotate — satellites stay inertial there — so this angle is the
-    link between ECI and Earth-fixed (latitude/longitude) coordinates.
-
-    Renderers use it to spin the globe, and ground tracks subtract it to turn an
-    inertial longitude into a geographic one.
-    """
-    return math.remainder((time_s / SECONDS_PER_EARTH_SIDEREAL_DAY) * 2.0 * math.pi, 2.0 * math.pi)
-
-
 def state_from_elements_at_time(elements: OrbitElements, time_s: float) -> tuple[Vector3, Vector3]:
     """Return (position_km, velocity_km_s) in ECI at ``time_s`` since epoch.
 
@@ -146,44 +139,62 @@ def state_from_elements_at_time(elements: OrbitElements, time_s: float) -> tuple
     return _state_from_true_anomaly(elements, math.radians(true_anomaly_at_time(elements, time_s)))
 
 
-def _satellite_states(config: SimulationConfig, time_s: float) -> list[SatelliteState]:
+def _scenario_has_components(config: SimulationConfig) -> bool:
+    return bool(config.components) or any(sat.components for sat in config.satellites)
+
+
+def _satellite_states(config: SimulationConfig, time_s: float,
+                      component_states: dict[str, list[dict[str, Any]]] | None = None
+                      ) -> list[SatelliteState]:
     # Day 15: the state comes from the scenario's registered dynamics component,
     # so a future fidelity level is a registry entry instead of a main-loop edit.
     # Imported here to keep ``dynamics`` free to depend on this module's math.
     from .dynamics import DEFAULT_MODEL_KEY, dynamics_model
 
     model = dynamics_model(config.dynamics_model or DEFAULT_MODEL_KEY)
+    component_states = component_states or {}
     satellites = []
     for sat in config.satellites:
         position, velocity = model.state_at(sat.orbit, time_s)
+        states = component_states.get(sat.id)
         satellites.append(SatelliteState(
             id=sat.id,
             position_eci_km=tuple(round(x, 6) for x in position),
             velocity_eci_km_s=tuple(round(x, 9) for x in velocity),
             orbit=sat.orbit,
+            # Day 18: runtime component state only appears when declared.
+            components=[SatelliteComponentState(**item) for item in states] if states else None,
         ))
     return satellites
 
 
 def initial_snapshot(config: SimulationConfig) -> SimulationSnapshot:
     """Snapshot of ``config`` at simulation_time_s = 0 (the epoch), paused."""
+    runtime = components.initial_runtime(config)
     return SimulationSnapshot(
         schema_version=SCHEMA_VERSION,
         scenario_id=config.scenario_id,
         producer=VersionMetadata(name="constellab-core", version=__version__),
         clock=config.initial_clock(),
-        satellites=_satellite_states(config, 0.0),
+        satellites=_satellite_states(config, 0.0, components.runtime_snapshot(config, runtime)),
     )
 
 
 def snapshot_at_time(
-    config: SimulationConfig, time_s: float, clock: SimulationClock | None = None
+    config: SimulationConfig, time_s: float, clock: SimulationClock | None = None,
+    runtime: "dict[str, components.SatelliteRuntime] | None" = None,
 ) -> SimulationSnapshot:
     """Snapshot of ``config`` at ``time_s``.
 
     ``clock`` supplies the epoch, time scale and paused flag reported to the
     renderer; when omitted the scenario's initial (paused) clock is used.
+    ``runtime`` supplies component runtime state (the running service hands its
+    incrementally advanced state here). Without one, a scenario that declares
+    components is rebuilt deterministically from epoch by integration.
     """
+    if runtime is None and _scenario_has_components(config):
+        runtime = components.integrated_states(config, time_s)
+    component_states = components.runtime_snapshot(config, runtime) if runtime is not None else {}
     base = clock or config.initial_clock()
     return SimulationSnapshot(
         schema_version=SCHEMA_VERSION,
@@ -195,5 +206,5 @@ def snapshot_at_time(
             time_scale=base.time_scale,
             paused=base.paused,
         ),
-        satellites=_satellite_states(config, time_s),
+        satellites=_satellite_states(config, time_s, component_states),
     )

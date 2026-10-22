@@ -28,6 +28,7 @@ class DynamicsModel(Protocol):
     key: str
     label: str
     assumptions: tuple[str, ...]
+    numerical_limits: dict[str, float]
 
     def state_at(self, elements: OrbitElements, time_s: float) -> tuple[Vector3, Vector3]:
         """ECI position (km) and velocity (km/s) at ``time_s`` seconds since epoch."""
@@ -47,6 +48,16 @@ class KeplerianTwoBody:
         "no perturbations (J2, drag, third body, solar radiation pressure) and no manoeuvres",
         "ECI frame is inertial and fixed at the scenario epoch; Earth rotation is a separate transform",
     )
+    # Day 17: what this model's numbers are actually good for. These are data the
+    # API reports, not prose in a docstring, so a renderer can show the limit
+    # next to a propagated state.
+    numerical_limits = {
+        "max_supported_eccentricity": 0.995,
+        "kepler_solver_iterations": 64.0,
+        "kepler_solver_tolerance_rad": 1e-13,
+        "validated_span_s": 2_000_000.0,
+        "reference_max_step_s": 5.0,
+    }
 
     def state_at(self, elements: OrbitElements, time_s: float) -> tuple[Vector3, Vector3]:
         return orbit.state_from_elements_at_time(elements, time_s)
@@ -88,7 +99,12 @@ def dynamics_model(key: str | None = None) -> DynamicsModel:
 def describe_models() -> list[dict[str, object]]:
     """Machine-readable registry description, in stable key order."""
     return [
-        {"key": model.key, "label": model.label, "assumptions": list(model.assumptions)}
+        {
+            "key": model.key,
+            "label": model.label,
+            "assumptions": list(model.assumptions),
+            "numerical_limits": dict(getattr(model, "numerical_limits", {})),
+        }
         for _, model in sorted(_REGISTRY.items())
     ]
 

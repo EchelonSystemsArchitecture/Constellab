@@ -1,0 +1,58 @@
+{
+  "owner": "sensor.conical",
+  "parameters": [
+    {
+      "key": "half_angle_deg",
+      "kind": "number",
+      "label": "Half angle",
+      "unit": "deg",
+      "default": 30,
+      "minimum": 0.1,
+      "maximum": 89.9,
+      "update_cadence_s": 10,
+      "description": "Half-opening angle of the field of regard."
+    },
+    {
+      "key": "max_range_km",
+      "kind": "number",
+      "label": "Maximum range",
+      "unit": "km",
+      "default": 2500,
+      "minimum": 1,
+      "maximum": 500000,
+      "distribution": "log-uniform",
+      "update_cadence_s": 10
+    },
+    {
+      "key": "integration_time_s",
+      "kind": "number",
+      "label": "Integration time",
+      "unit": "s",
+      "default": 0.5,
+      "minimum": 0.001,
+      "maximum": 3600,
+      "distribution": "log-uniform",
+      "update_cadence_s": 10
+    },
+    {
+      "key": "duty_cycle_ratio",
+      "kind": "number",
+      "label": "Duty cycle",
+      "unit": "1",
+      "default": 0.3,
+      "minimum": 0,
+      "maximum": 1,
+      "update_cadence_s": 10
+    },
+    {
+      "key": "draw_w",
+      "kind": "number",
+      "label": "Power draw",
+      "unit": "W",
+      "default": 12,
+      "minimum": 0,
+      "maximum": 10000,
+      "update_cadence_s": 10
+    }
+  ]
+}

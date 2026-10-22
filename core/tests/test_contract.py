@@ -272,7 +272,7 @@ class TestOrbitPropagation(unittest.TestCase):
 
     def test_earth_rotation_uses_the_real_sidereal_day(self):
         self.assertEqual(SECONDS_PER_EARTH_SIDEREAL_DAY, 86164.0905)
-        self.assertEqual(EARTH_AXIAL_TILT_DEG, 23.44)
+        self.assertEqual(EARTH_AXIAL_TILT_DEG, 23.4392911)
         # 360° per sidereal day = 15.041° per hour of simulated time.
         self.assertAlmostEqual(
             math.degrees(earth_rotation_angle_rad(3600.0)), 15.0411, places=3

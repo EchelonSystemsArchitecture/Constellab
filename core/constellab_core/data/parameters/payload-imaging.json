@@ -1,0 +1,47 @@
+{
+  "owner": "payload.imaging",
+  "parameters": [
+    {
+      "key": "resolution_m",
+      "kind": "number",
+      "label": "Ground resolution",
+      "unit": "m",
+      "default": 3,
+      "minimum": 0.05,
+      "maximum": 1000,
+      "distribution": "log-uniform",
+      "update_cadence_s": 10
+    },
+    {
+      "key": "swath_km",
+      "kind": "number",
+      "label": "Swath width",
+      "unit": "km",
+      "default": 40,
+      "minimum": 0.5,
+      "maximum": 3000,
+      "update_cadence_s": 10
+    },
+    {
+      "key": "draw_w",
+      "kind": "number",
+      "label": "Power draw",
+      "unit": "W",
+      "default": 18,
+      "minimum": 0,
+      "maximum": 10000,
+      "update_cadence_s": 10
+    },
+    {
+      "key": "data_rate_bit_s",
+      "kind": "number",
+      "label": "Data rate",
+      "unit": "bit/s",
+      "default": 320000000,
+      "minimum": 1,
+      "maximum": 100000000000,
+      "distribution": "log-uniform",
+      "update_cadence_s": 10
+    }
+  ]
+}

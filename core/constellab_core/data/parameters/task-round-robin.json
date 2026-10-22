@@ -1,0 +1,32 @@
+{
+  "owner": "task.round-robin",
+  "parameters": [
+    {
+      "key": "task_count",
+      "kind": "integer",
+      "label": "Task count",
+      "default": 4,
+      "minimum": 1,
+      "maximum": 256,
+      "description": "Number of declared tasks this satellite cycles through."
+    },
+    {
+      "key": "task_duration_s",
+      "kind": "number",
+      "label": "Task duration",
+      "unit": "s",
+      "default": 600,
+      "minimum": 1,
+      "maximum": 86400,
+      "update_cadence_s": 30
+    },
+    {
+      "key": "start_index",
+      "kind": "integer",
+      "label": "First task index",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 255
+    }
+  ]
+}

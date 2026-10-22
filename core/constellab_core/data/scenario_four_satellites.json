@@ -54,5 +54,31 @@
         "true_anomaly_deg": 200
       }
     }
+  ],
+  "components": [
+    {
+      "type": "event-source.clock-tick"
+    },
+    {
+      "type": "task.round-robin"
+    },
+    {
+      "type": "sensor.conical",
+      "parameters": {
+        "half_angle_deg": 40
+      }
+    },
+    {
+      "type": "payload.imaging"
+    },
+    {
+      "type": "storage.buffer"
+    },
+    {
+      "type": "compute.capacity"
+    },
+    {
+      "type": "power.solar-battery"
+    }
   ]
 }

@@ -1,0 +1,57 @@
+{
+  "owner": "power.constant",
+  "parameters": [
+    {
+      "key": "supply_w",
+      "kind": "number",
+      "label": "Constant supply",
+      "unit": "W",
+      "default": 120,
+      "minimum": 0,
+      "maximum": 1000000,
+      "distribution": "uniform",
+      "update_cadence_s": 10,
+      "description": "Regulated generation independent of eclipse; a stand-in for a radioisotope or fuel-cell bus."
+    },
+    {
+      "key": "battery_capacity_j",
+      "kind": "number",
+      "label": "Battery capacity",
+      "unit": "J",
+      "default": 120000,
+      "minimum": 1000,
+      "maximum": 100000000,
+      "distribution": "log-uniform",
+      "update_cadence_s": 10
+    },
+    {
+      "key": "base_load_w",
+      "kind": "number",
+      "label": "Base load",
+      "unit": "W",
+      "default": 45,
+      "minimum": 0,
+      "maximum": 50000,
+      "update_cadence_s": 10
+    },
+    {
+      "key": "charge_efficiency_ratio",
+      "kind": "number",
+      "label": "Charge efficiency",
+      "unit": "1",
+      "default": 0.9,
+      "minimum": 0.1,
+      "maximum": 1,
+      "update_cadence_s": 10
+    },
+    {
+      "key": "initial_charge_ratio",
+      "kind": "number",
+      "label": "Initial charge",
+      "unit": "1",
+      "default": 1,
+      "minimum": 0,
+      "maximum": 1
+    }
+  ]
+}

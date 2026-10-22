@@ -1,14 +1,14 @@
 // GENERATED FILE - do not edit. Source: core/constellab_core/data/simulation_contract.schema.json
 // Regenerate with: npm run gen:contract
 
-export const SCHEMA_VERSION = "1.1.0";
+export const SCHEMA_VERSION = "1.2.0";
 
 /** The contract schema, embedded so the renderer can validate snapshots at runtime. */
 export const SIMULATION_CONTRACT_SCHEMA = {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://constellab.ai/schemas/simulation_contract/1.1.0",
+  "$id": "https://constellab.ai/schemas/simulation_contract/1.2.0",
   "title": "ConstellaLab simulation/visualization contract",
-  "x-schema-version": "1.1.0",
+  "x-schema-version": "1.2.0",
   "x-ui": {
     "SimulationConfig.schema_version": {
       "label": "Schema version",
@@ -70,9 +70,24 @@ export const SIMULATION_CONTRACT_SCHEMA = {
       "label": "True anomaly",
       "unit": "\u00b0",
       "step": 0.1
+    },
+    "SimulationConfig.components": {
+      "label": "Fleet default components",
+      "readOnly": true
+    },
+    "SatelliteConfig.components": {
+      "label": "Components"
+    },
+    "ComponentConfig.type": {
+      "label": "Component type",
+      "readOnly": true
+    },
+    "SatelliteComponentState.type": {
+      "label": "Component type",
+      "readOnly": true
     }
   },
-  "description": "Single versioned source for the data exchanged between the simulation core and any renderer. Conventions: lengths in kilometres, velocities in kilometres per second, angles in degrees, durations in seconds. Positions and velocities are expressed in a non-rotating Earth-centred inertial (ECI) frame whose axes are fixed at the scenario epoch; Earth rotation and precession are not modelled. `epoch_utc` is an ISO 8601 UTC instant (suffix Z); `simulation_time_s` counts simulated seconds since that epoch and is owned exclusively by the core. Optional fields may be omitted (defaults apply) but may not be null; unknown fields are rejected. Array position is never an identity: every entity carries a stable `id`. Compatibility rule: a payload is accepted when its schema_version has the same major version as this document and a minor version not greater than this document's.",
+  "description": "Single versioned source for the data exchanged between the simulation core and any renderer. Conventions: lengths in kilometres, velocities in kilometres per second, angles in degrees, durations in seconds. Positions and velocities are expressed in a non-rotating Earth-centred inertial (ECI) frame whose axes are fixed at the scenario epoch; Earth rotation and precession are not modelled. `epoch_utc` is an ISO 8601 UTC instant (suffix Z); `simulation_time_s` counts simulated seconds since that epoch and is owned exclusively by the core. Optional fields may be omitted (defaults apply) but may not be null; unknown fields are rejected. Array position is never an identity: every entity carries a stable `id`. Compatibility rule: a payload is accepted when its schema_version has the same major version as this document and a minor version not greater than this document's. Optional virtual components (power, storage, compute, sensors, payloads, tasks, event sources) are declared per satellite or as fleet defaults; each component type and every one of its parameter values is validated against the core's component and parameter registries, so an unregistered or unconsumed parameter is rejected rather than silently ignored. Runtime component state appears in snapshots only.",
   "$defs": {
     "SchemaVersion": {
       "type": "string",
@@ -228,6 +243,14 @@ export const SIMULATION_CONTRACT_SCHEMA = {
         },
         "orbit": {
           "$ref": "#/$defs/OrbitElements"
+        },
+        "components": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ComponentConfig"
+          },
+          "maxItems": 16,
+          "description": "Components this satellite declares; replaces the fleet defaults when present."
         }
       },
       "description": "Initial definition of one virtual satellite (configuration, not runtime state)."
@@ -284,6 +307,14 @@ export const SIMULATION_CONTRACT_SCHEMA = {
           },
           "maxItems": 10000,
           "x-unique-by": "id"
+        },
+        "components": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/ComponentConfig"
+          },
+          "maxItems": 16,
+          "description": "Fleet-wide default components applied to satellites that declare none."
         }
       },
       "description": "Everything needed to start a deterministic scenario. Contains no runtime state."
@@ -309,6 +340,14 @@ export const SIMULATION_CONTRACT_SCHEMA = {
         "orbit": {
           "$ref": "#/$defs/OrbitElements",
           "description": "Osculating elements, when the producer tracks them."
+        },
+        "components": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/SatelliteComponentState"
+          },
+          "maxItems": 16,
+          "description": "Runtime component state at this simulation time; omitted when the scenario declares no components."
         }
       },
       "description": "Runtime state of one satellite at the snapshot's simulation time."
@@ -346,6 +385,45 @@ export const SIMULATION_CONTRACT_SCHEMA = {
         }
       },
       "description": "Immutable view of the canonical simulation state. Renderers consume it as-is and never recompute positions."
+    },
+    "ComponentConfig": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]*\\.[a-z][a-z0-9-]*$",
+          "maxLength": 64,
+          "description": "Fully qualified component key, e.g. power.solar-battery. Must be registered with the core's component registry."
+        },
+        "parameters": {
+          "type": "object",
+          "description": "Parameter values for this component, keyed by the component's short parameter keys and validated against the parameter registry."
+        }
+      },
+      "description": "Declaration of one virtual spacecraft component (configuration, not runtime state)."
+    },
+    "SatelliteComponentState": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type"
+      ],
+      "properties": {
+        "type": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]*\\.[a-z][a-z0-9-]*$",
+          "maxLength": 64
+        },
+        "state": {
+          "type": "object",
+          "description": "Runtime state values of the component (quantity keys end with their unit)."
+        }
+      },
+      "description": "Runtime state of one virtual component at the snapshot's simulation time."
     }
   }
 } as const;
@@ -403,6 +481,8 @@ export interface SatelliteConfig {
   /** Display label; defaults to id. */
   name?: string;
   orbit: OrbitElements;
+  /** Components this satellite declares; replaces the fleet defaults when present. */
+  components?: ComponentConfig[];
 }
 
 /** Everything needed to start a deterministic scenario. Contains no runtime state. */
@@ -418,6 +498,8 @@ export interface SimulationConfig {
   /** Key of the registered dynamics component that propagates this scenario. Validated against the core's model registry; the default is the analytic two-body Kepler model. */
   dynamics_model?: string;
   satellites: SatelliteConfig[];
+  /** Fleet-wide default components applied to satellites that declare none. */
+  components?: ComponentConfig[];
 }
 
 /** Runtime state of one satellite at the snapshot's simulation time. */
@@ -427,6 +509,8 @@ export interface SatelliteState {
   velocity_eci_km_s: Vector3KmPerS;
   /** Osculating elements, when the producer tracks them. */
   orbit?: OrbitElements;
+  /** Runtime component state at this simulation time; omitted when the scenario declares no components. */
+  components?: SatelliteComponentState[];
 }
 
 /** Immutable view of the canonical simulation state. Renderers consume it as-is and never recompute positions. */
@@ -438,4 +522,19 @@ export interface SimulationSnapshot {
   satellites: SatelliteState[];
 }
 
-export type DefinitionName = "SchemaVersion" | "EntityId" | "UtcTimestamp" | "Vector3Km" | "Vector3KmPerS" | "VersionMetadata" | "OrbitElements" | "SimulationClock" | "SatelliteConfig" | "SimulationConfig" | "SatelliteState" | "SimulationSnapshot";
+/** Declaration of one virtual spacecraft component (configuration, not runtime state). */
+export interface ComponentConfig {
+  /** Fully qualified component key, e.g. power.solar-battery. Must be registered with the core's component registry. */
+  type: string;
+  /** Parameter values for this component, keyed by the component's short parameter keys and validated against the parameter registry. */
+  parameters?: Record<string, unknown>;
+}
+
+/** Runtime state of one virtual component at the snapshot's simulation time. */
+export interface SatelliteComponentState {
+  type: string;
+  /** Runtime state values of the component (quantity keys end with their unit). */
+  state?: Record<string, unknown>;
+}
+
+export type DefinitionName = "SchemaVersion" | "EntityId" | "UtcTimestamp" | "Vector3Km" | "Vector3KmPerS" | "VersionMetadata" | "OrbitElements" | "SimulationClock" | "SatelliteConfig" | "SimulationConfig" | "SatelliteState" | "SimulationSnapshot" | "ComponentConfig" | "SatelliteComponentState";

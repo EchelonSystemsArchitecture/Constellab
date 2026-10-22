@@ -18,6 +18,7 @@ from typing import Any
 
 from .contract import ContractError, SimulationConfig
 from .dynamics import DEFAULT_MODEL_KEY, registered_models
+from .physics import validate_elements
 
 MAX_CONFIG_BYTES = 1_048_576  # 1 MiB bound on config payloads
 
@@ -114,13 +115,33 @@ def _validate_dynamics_model(config: SimulationConfig) -> SimulationConfig:
     return config
 
 
+def _validate_physics(config: SimulationConfig) -> SimulationConfig:
+    """Day 16: reject well-formed elements that describe an impossible orbit."""
+    issues: list[dict[str, str]] = []
+    for index, satellite in enumerate(config.satellites):
+        issues.extend(validate_elements(satellite.orbit, f"$.satellites[{index}].orbit"))
+    if issues:
+        raise ConfigError(issues)
+    return config
+
+
 def load_config(raw: Any) -> SimulationConfig:
-    """Validate a decoded JSON payload and return the typed configuration."""
+    """Validate a decoded JSON payload and return the typed configuration.
+
+    Three layers run in order: the contract (shape, units by field name), the
+    physics (a closed orbit above the surface) and the registries (known
+    dynamics model and component types, each parameter owned by its component).
+    """
     try:
         config = SimulationConfig.from_dict(raw)
     except ContractError as exc:
         raise ConfigError(exc.errors) from None
-    return _validate_dynamics_model(config)
+    config = _validate_physics(config)
+    config = _validate_dynamics_model(config)
+    from .components import validate_components
+
+    validate_components(config)
+    return config
 
 
 def validate_config(raw: Any) -> dict[str, Any]:

@@ -27,8 +27,14 @@ from .config import (
     scenario_catalog,
     validate_config_bytes,
 )
+from . import components, plugins
+from .frames import frames_payload
+from .physics import orbit_field_payload
+from .units import registry_payload as units_registry_payload
 from .contract import SCHEMA, ContractError, SimulationClock, SimulationConfig
 from .orbit import initial_snapshot, snapshot_at_time
+if not components.registered_components():  # pragma: no cover - defensive
+    plugins.activate_builtins()
 
 ROUTES = {
     ("GET", "/api/status"): "status",
@@ -39,6 +45,7 @@ ROUTES = {
     ("POST", "/api/scenario"): "scenario_load",
     ("GET", "/api/snapshot"): "snapshot",
     ("GET", "/api/state"): "state",
+    ("GET", "/api/registry"): "registry",
     ("GET", "/api/clock"): "clock_get",
     ("POST", "/api/clock/pause"): "clock_pause",
     ("POST", "/api/clock/resume"): "clock_resume",
@@ -79,7 +86,33 @@ def status_payload() -> dict[str, Any]:
         "platform": sys.platform,
         "utc_time": datetime.now(timezone.utc).isoformat(),
         "endpoints": [f"{method} {path}" for method, path in ROUTES],
+        "registry": registry_summary(),
     }
+
+
+def registry_summary() -> dict[str, Any]:
+    """Machine-readable Day 16-20 registry summary for status and /api/registry."""
+    from .parameters import builtin_registry
+
+    parameters = builtin_registry()
+    return {
+        "units": units_registry_payload(),
+        "frames": frames_payload(),
+        "orbit_fields": orbit_field_payload(),
+        "parameters": {
+            "schema_version": parameters.payload()["schema_version"],
+            "schema_hash": parameters.schema_hash(),
+            "count": len(parameters),
+            "owners": parameters.owners(),
+        },
+        "components": components.states_payload(),
+        "plugins": plugins.host().report(),
+    }
+
+
+def registry_payload() -> dict[str, Any]:
+    """Everything typed, registered data the core is built from, in one reply."""
+    return registry_summary()
 
 
 def _json_bytes(payload: Any) -> bytes:
@@ -137,7 +170,10 @@ class CoreHandler(BaseHTTPRequestHandler):
             clock = self.clock
             revision = self.server.revision  # type: ignore[attr-defined]
             scenario = self.scenario
-        return revision, snapshot_at_time(scenario, clock.simulation_time_s, clock)
+        runtime = getattr(self.server, "runtime", None)
+        return revision, snapshot_at_time(
+            scenario, clock.simulation_time_s, clock, runtime=runtime
+        )
 
     def _route(self, method: str) -> str | None:
         return ROUTES.get((method, self.path.split("?", 1)[0]))
@@ -208,6 +244,8 @@ class CoreHandler(BaseHTTPRequestHandler):
             })
         elif route == "clock_get":
             self._send(200, self.clock.to_dict())
+        elif route == "registry":
+            self._send(200, registry_payload())
         else:
             self._not_found()
 
@@ -272,6 +310,7 @@ class CoreHandler(BaseHTTPRequestHandler):
                         self.server.clock = clock
                         self.server.sync_advance_rate()
                 elif route == "clock_reset":
+                    self.server.runtime = components.initial_runtime(self.server.scenario)
                     epoch = self.server.scenario.initial_clock()
                     clock = SimulationClock(
                         epoch_utc=epoch.epoch_utc,
@@ -283,9 +322,15 @@ class CoreHandler(BaseHTTPRequestHandler):
                     self.server.sync_advance_rate()
                 elif route == "clock_step":
                     # Single step: advance by one simulation second (regardless of time_scale)
+                    new_time_s = clock.simulation_time_s + 1.0
+                    if self.server.runtime:
+                        components.advance_runtime(
+                            self.scenario, self.server.runtime,
+                            time_s=new_time_s, dt_s=1.0,
+                        )
                     clock = SimulationClock(
                         epoch_utc=clock.epoch_utc,
-                        simulation_time_s=clock.simulation_time_s + 1.0,
+                        simulation_time_s=new_time_s,
                         time_scale=clock.time_scale,
                         paused=clock.paused,
                     )
@@ -365,6 +410,7 @@ class CoreHandler(BaseHTTPRequestHandler):
 
         with self.server._clock_lock:
             self.server.scenario = config
+            self.server.runtime = components.initial_runtime(config)
             clock = running_clock(config)
             self.server.clock = clock
             self.server.sync_advance_rate()
@@ -396,6 +442,8 @@ class CoreServer(ThreadingHTTPServer):
         self.scenario = builtin_scenario()
         self.clock = running_clock(self.scenario)
         self.revision = 1
+        # Day 18: per-satellite virtual component runtime, advanced each tick.
+        self.runtime = components.initial_runtime(self.scenario)
         self._clock_lock = threading.Lock()
         self._advance_thread: threading.Thread | None = None
         self._stop_advance = threading.Event()
@@ -450,6 +498,12 @@ class CoreServer(ThreadingHTTPServer):
                         time_scale=target,
                         paused=self.clock.paused,
                     )
+                    if self.runtime:
+                        components.advance_runtime(
+                            self.scenario, self.runtime,
+                            time_s=self.clock.simulation_time_s,
+                            dt_s=dt * self._advance_rate,
+                        )
                     self.bump_revision()
 
 
@@ -473,6 +527,7 @@ def serve(host: str = "127.0.0.1", port: int = 0, scenario: SimulationConfig | N
     server = CoreServer((host, port), CoreHandler)
     server.scenario = scenario or builtin_scenario()  # type: ignore[attr-defined]
     server.clock = running_clock(server.scenario)
+    server.runtime = components.initial_runtime(server.scenario)  # type: ignore[attr-defined]
     server.sync_advance_rate()
     server.start_advance()
     return server

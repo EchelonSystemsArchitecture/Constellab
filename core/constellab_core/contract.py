@@ -178,11 +178,28 @@ class SimulationClock(ContractModel):
 
 
 @dataclass(frozen=True)
+class ComponentConfig(ContractModel):
+    """Day 18: one virtual component a satellite runs (configuration)."""
+    DEFINITION: ClassVar[str] = "ComponentConfig"
+    type: str
+    parameters: dict[str, Any] | None = None
+
+
+@dataclass(frozen=True)
+class SatelliteComponentState(ContractModel):
+    """Day 18: runtime state of one component in a snapshot."""
+    DEFINITION: ClassVar[str] = "SatelliteComponentState"
+    type: str
+    state: dict[str, Any] | None = None
+
+
+@dataclass(frozen=True)
 class SatelliteConfig(ContractModel):
     DEFINITION: ClassVar[str] = "SatelliteConfig"
     id: str
     orbit: OrbitElements
     name: str | None = None
+    components: list[ComponentConfig] | None = None  # Day 18/20
 
     @property
     def label(self) -> str:
@@ -201,6 +218,8 @@ class SimulationConfig(ContractModel):
     time_scale: float = 1.0
     # Day 15: registered dynamics component; None means the default model.
     dynamics_model: str | None = None
+    # Day 18/20: fleet-wide default components for satellites that declare none.
+    components: list[ComponentConfig] | None = None
 
     @property
     def label(self) -> str:
@@ -217,6 +236,7 @@ class SatelliteState(ContractModel):
     position_eci_km: Vector3
     velocity_eci_km_s: Vector3
     orbit: OrbitElements | None = None
+    components: list[SatelliteComponentState] | None = None  # Day 18/20
 
 
 @dataclass(frozen=True)
@@ -232,5 +252,6 @@ class SimulationSnapshot(ContractModel):
 DEFINITIONS: dict[str, type[ContractModel]] = {
     cls.DEFINITION: cls
     for cls in (VersionMetadata, OrbitElements, SimulationClock, SatelliteConfig,
-                SimulationConfig, SatelliteState, SimulationSnapshot)
+                SimulationConfig, SatelliteState, SimulationSnapshot,
+                ComponentConfig, SatelliteComponentState)
 }

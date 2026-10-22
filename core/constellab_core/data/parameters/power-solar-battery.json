@@ -1,0 +1,89 @@
+{
+  "owner": "power.solar-battery",
+  "parameters": [
+    {
+      "key": "array_area_m2",
+      "kind": "number",
+      "label": "Solar array area",
+      "unit": "m2",
+      "default": 2.0,
+      "minimum": 0.05,
+      "maximum": 200,
+      "distribution": "log-uniform",
+      "normalization": {
+        "scale": 2.0,
+        "offset": 0.0
+      },
+      "update_cadence_s": 10,
+      "description": "Total cell area facing the sun; illustrative, not a customer default."
+    },
+    {
+      "key": "efficiency_ratio",
+      "kind": "number",
+      "label": "Array efficiency",
+      "unit": "1",
+      "default": 0.28,
+      "minimum": 0.02,
+      "maximum": 0.6,
+      "distribution": "uniform",
+      "update_cadence_s": 10,
+      "description": "Fraction of incident solar flux converted to electrical power."
+    },
+    {
+      "key": "battery_capacity_j",
+      "kind": "number",
+      "label": "Battery capacity",
+      "unit": "J",
+      "default": 120000,
+      "minimum": 1000,
+      "maximum": 100000000,
+      "distribution": "log-uniform",
+      "normalization": {
+        "scale": 120000,
+        "offset": 0.0
+      },
+      "update_cadence_s": 10,
+      "description": "Usable stored energy."
+    },
+    {
+      "key": "base_load_w",
+      "kind": "number",
+      "label": "Base load",
+      "unit": "W",
+      "default": 45,
+      "minimum": 0,
+      "maximum": 50000,
+      "distribution": "uniform",
+      "update_cadence_s": 10,
+      "description": "Bus power draw that is always on."
+    },
+    {
+      "key": "charge_efficiency_ratio",
+      "kind": "number",
+      "label": "Charge efficiency",
+      "unit": "1",
+      "default": 0.9,
+      "minimum": 0.1,
+      "maximum": 1,
+      "update_cadence_s": 10,
+      "description": "Fraction of surplus solar power that reaches the battery."
+    },
+    {
+      "key": "initial_charge_ratio",
+      "kind": "number",
+      "label": "Initial charge",
+      "unit": "1",
+      "default": 1,
+      "minimum": 0,
+      "maximum": 1,
+      "description": "State of charge at the scenario epoch."
+    },
+    {
+      "key": "sun_tracking",
+      "kind": "boolean",
+      "label": "Sun tracking",
+      "default": true,
+      "description": "Whether the array follows the sun instead of a fixed nadir-facing normal."
+    }
+  ]
+}

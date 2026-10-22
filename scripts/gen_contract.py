@@ -32,6 +32,9 @@ def ts_type(node: dict[str, Any]) -> str:
             return "[" + ", ".join([item] * node["minItems"]) + "]"
         return f"{item}[]"
     if kind == "object":
+        if "properties" not in node:
+            value_ts = ts_type(node.get("additionalProperties", {})) if "additionalProperties" in node else "unknown"
+            return f"Record<string, {value_ts}>"
         required = set(node.get("required", []))
         lines = []
         for name, prop in node["properties"].items():

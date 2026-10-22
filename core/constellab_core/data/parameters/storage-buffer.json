@@ -1,0 +1,45 @@
+{
+  "owner": "storage.buffer",
+  "parameters": [
+    {
+      "key": "capacity_bit",
+      "kind": "number",
+      "label": "Buffer capacity",
+      "unit": "bit",
+      "default": 32000000000,
+      "minimum": 1000,
+      "maximum": 1000000000000000,
+      "distribution": "log-uniform",
+      "normalization": { "scale": 32000000000, "offset": 0.0 }
+    },
+    {
+      "key": "write_rate_bit_s",
+      "kind": "number",
+      "label": "Write rate",
+      "unit": "bit/s",
+      "default": 320000000,
+      "minimum": 1,
+      "maximum": 100000000000,
+      "distribution": "log-uniform"
+    },
+    {
+      "key": "read_rate_bit_s",
+      "kind": "number",
+      "label": "Read rate",
+      "unit": "bit/s",
+      "default": 320000000,
+      "minimum": 1,
+      "maximum": 100000000000,
+      "distribution": "log-uniform"
+    },
+    {
+      "key": "initial_fill_ratio",
+      "kind": "number",
+      "label": "Initial fill",
+      "unit": "1",
+      "default": 0,
+      "minimum": 0,
+      "maximum": 1
+    }
+  ]
+}

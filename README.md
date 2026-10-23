@@ -1,6 +1,6 @@
 <p align="center"><img src="assets/icons/icon.png" alt="ConstellaLab logo" width="120"></p>
 
-# ConstellaLab — Day 10: Canonical Simulation API
+# ConstellaLab — Day 30: Swarm-Testing Layer
 
 Software-only crash-test lab for autonomous satellite swarms — a Three.js Earth viewport built on the versioned Python/TypeScript simulation contract. Satellites orbit Earth from snapshots produced by the local Python core, which can also run headlessly for batch work.
 
@@ -48,8 +48,43 @@ The app opens with a brief `constellab` splash, then the landing page, then the 
 - `constellab_core run` advances a scenario with no server and no browser, streaming one NDJSON
   record per step (about 110k satellite states/s on a laptop), which is the entry point for batch
   work. Training code is not coupled into the visual process.
-- The API is strictly renderer ↔ core. There is no satellite-to-satellite messaging or swarm
-  coordination yet.
+- The API is strictly renderer ↔ core at this point. Simulated inter-satellite contacts and
+  message transport arrive later (Days 25–30, below); they are core-side and not yet driven by the
+  visual client.
+
+## Days 25–30: targets, sensors, tasks, policies, contacts and transport
+
+The simulation core now carries the swarm-testing layer. Everything is config/
+plugin driven, deterministic under a seed, and split so a policy can never read
+the simulator's ground truth.
+
+| Module | What it owns |
+|---|---|
+| `core/constellab_core/targets.py` | `EventTarget` (id, kind, location/radius, active interval, urgency, requirements, separate `truth`) and the `EventSource` registry (`hotspot`, `flood-region`, `change-detection`) |
+| `core/constellab_core/sensors.py` | `SensorModel` plugins, footprint geometry (range, off-nadir, elevation, limb occlusion, resolution proxy), hash cloud mask, duty cycle, contiguous `AccessWindow`s |
+| `core/constellab_core/tasks.py` | generic task lifecycle, idempotent/illegal transitions, deadlines, and observation outcomes with confidence, freshness and resource cost |
+| `core/constellab_core/policy.py` | observation/action schema, `local-greedy` + `fixed-priority` baselines, diagnostic `oracle-upper-bound`, and the shared `run_episode` harness |
+| `core/constellab_core/contacts.py` | `LinkModel` plugins (`link.uhf`, `link.optical`), deterministic contact plans, topology helpers, three reference arrangements |
+| `core/constellab_core/transport.py` | bounded queues, bandwidth, latency, seeded loss/duplication/reordering, partitions, reconnect policy, replayable trace |
+
+Key guarantees:
+
+- **Ground truth stays simulator-side.** Policies receive `PolicyObservation`
+  (active targets only, already-created tasks, predicted access windows) and
+  nothing else; a target's `truth` payload is serialised in exactly one place,
+  the simulator side, and observation construction rejects it.
+- **Every outcome is reproducible.** Event traces, access windows, episode
+  traces, contact plans and message traces are all functions of
+  `(config, targets, seed, step)`, asserted by tests in each suite.
+- **Partitions prevent delivery, not just drawing.** While a partition is
+  active a message cannot cross between its groups; `flush`/`hold`/`drop`
+  decide what happens to traffic that waited.
+- **A policy only proposes.** The harness validates every proposal; illegal
+  actions, unknown tasks and double claims are rejected and recorded.
+
+`GET /api/swarm` publishes the Day 25–30 registries (event kinds, sensor models,
+task types, policies, link models, transport defaults) for the renderer and
+tests. Run the suites with `npm run test:core` or everything with `npm test`.
 
 ## Day 4–5: satellites, orbit paths and motion
 
@@ -121,6 +156,7 @@ Icons and the wordmark/symbol come from `assets/constellab_brand_assets/`. `asse
 | `POST /api/snapshot` | validate config and return its epoch snapshot |
 | `GET /api/clock` | clock (epoch, simulation time, scale, paused) |
 | `POST /api/clock/pause`, `/resume`, `/reset`, `/step`, `/time_scale` | simulation time controls |
+| `GET /api/swarm` | Days 25–30 registries: target kinds, sensors, tasks, policies, links, transport |
 
 Responses carry `X-Request-Id` and `X-Revision`. Errors are JSON with a stable `error` code, a
 human `message` and the `request_id`; validation errors also carry field-path `errors`.

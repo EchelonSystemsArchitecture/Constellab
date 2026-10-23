@@ -14,9 +14,9 @@
   },
   "stress": {
     "registry_parameters": 1000,
-    "registry_load_ms": 2.736,
-    "config_1000_load_ms": 248.893,
-    "component_runtime_1000_ms": 284.834
+    "registry_load_ms": 6.435,
+    "config_1000_load_ms": 539.112,
+    "component_runtime_1000_ms": 677.914
   },
   "examples": {
     "valid_scenarios": [

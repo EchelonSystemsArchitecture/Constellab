@@ -46,6 +46,7 @@ ROUTES = {
     ("GET", "/api/snapshot"): "snapshot",
     ("GET", "/api/state"): "state",
     ("GET", "/api/registry"): "registry",
+    ("GET", "/api/swarm"): "swarm",
     ("GET", "/api/clock"): "clock_get",
     ("POST", "/api/clock/pause"): "clock_pause",
     ("POST", "/api/clock/resume"): "clock_resume",
@@ -128,6 +129,31 @@ def registry_payload() -> dict[str, Any]:
         "owners": parameters.owners(),
         "count": len(parameters),
         "parameters": [spec.to_dict() for spec in parameters.specs()],
+    }
+
+
+def swarm_payload() -> dict[str, Any]:
+    """Day 25-30 registries: targets, sensors, tasks, policies, links, transport.
+
+    The renderer and any test client read the same descriptions the core uses,
+    so a new event source, sensor, task type, policy or link model is discoverable
+    without a hard-coded endpoint list.
+    """
+    from . import contacts, policy, sensors, targets, tasks, transport
+
+    return {
+        "targets": {
+            "version": targets.EVENT_SOURCE_VERSION,
+            "kinds": list(targets.SUPPORTED_EVENT_KINDS),
+        },
+        "sensors": sensors.sensor_models_payload(),
+        "tasks": tasks.task_types_payload(),
+        "policies": {
+            "version": policy.POLICY_VERSION,
+            "policies": policy.registered_policy_metadata(),
+        },
+        "contacts": contacts.link_models_payload(),
+        "transport": transport.message_payload(),
     }
 
 
@@ -262,6 +288,8 @@ class CoreHandler(BaseHTTPRequestHandler):
             self._send(200, self.clock.to_dict())
         elif route == "registry":
             self._send(200, registry_payload())
+        elif route == "swarm":
+            self._send(200, swarm_payload())
         else:
             self._not_found()
 

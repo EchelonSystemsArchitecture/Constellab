@@ -113,8 +113,11 @@ class DeterministicTraceTests(unittest.TestCase):
         first = [t.to_dict() for t in self.registry.generate(seed=42, config=spec)]
         second = [t.to_dict() for t in self.registry.generate(seed=42, config=spec)]
         self.assertEqual(json.dumps(first, sort_keys=True), json.dumps(second, sort_keys=True))
+        # Per-source specs only shape their own source; every activated source
+        # still contributes, and each id carries its source prefix.
         ids = [t["id"] for t in first]
-        self.assertTrue(all(i.startswith("hotspot.") for i in ids))
+        for prefix in ("hotspot.", "flood-region.", "change-detection."):
+            self.assertTrue(any(i.startswith(prefix) for i in ids), prefix)
 
     def test_different_seeds_differ(self) -> None:
         first = json.dumps([t.to_dict() for t in self.registry.generate(seed=1)], sort_keys=True)

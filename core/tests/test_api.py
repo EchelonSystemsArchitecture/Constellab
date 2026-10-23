@@ -220,5 +220,25 @@ class TestHeadlessRun(unittest.TestCase):
         self.assertEqual(record["satellites"], [])
 
 
+class TestSwarmRegistries(ApiTestCase):
+    def test_swarm_endpoint_exposes_the_day_25_to_30_registries(self):
+        res, payload = self._request("GET", "/api/swarm")
+        self.assertEqual(res.status, 200)
+        self.assertEqual(payload["targets"]["kinds"],
+                         ["hotspot", "flood-region", "change-detection"])
+        self.assertEqual({item["key"] for item in payload["sensors"]["models"]},
+                         {"sensor.conical", "sensor.agile"})
+        self.assertEqual({item["key"] for item in payload["tasks"]["types"]},
+                         {"task.imaging", "task.change-detection"})
+        self.assertEqual({item["key"] for item in payload["policies"]["policies"]},
+                         {"local-greedy", "fixed-priority", "oracle-upper-bound"})
+        self.assertEqual({item["key"] for item in payload["contacts"]["models"]},
+                         {"link.uhf", "link.optical"})
+        self.assertIn("overflow_policy", payload["transport"]["defaults"])
+        # The route is advertised in status alongside every other endpoint.
+        _, status = self._request("GET", "/api/status")
+        self.assertIn("GET /api/swarm", status["endpoints"])
+
+
 if __name__ == "__main__":
     unittest.main()

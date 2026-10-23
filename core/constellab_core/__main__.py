@@ -23,6 +23,7 @@ import argparse
 import json
 import sys
 import time
+from pathlib import Path
 
 from . import __version__
 from .config import BUILTIN_SCENARIOS, DEFAULT_SCENARIO, ConfigError, load_config_file
@@ -130,6 +131,17 @@ def _cmd_run(args: argparse.Namespace) -> int:
     return 0
 
 
+def _cmd_g1(args: argparse.Namespace) -> int:
+    """Day 24: generate and persist the automated G1 acceptance report."""
+    from .g1 import write_report
+
+    target = write_report(Path(args.out) if args.out else None)
+    payload = json.loads(target.read_text(encoding="utf-8"))
+    payload["report_path"] = str(target)
+    print(json.dumps(payload, indent=2))
+    return 0
+
+
 def _cmd_serve(args: argparse.Namespace) -> int:
     try:
         scenario = load_config_file(args.scenario)
@@ -176,6 +188,10 @@ def main(argv: list[str] | None = None) -> int:
                        help="simulated seconds between records (default 10)")
     p_run.add_argument("--out", metavar="FILE", help="write newline-delimited records here")
     p_run.set_defaults(func=_cmd_run)
+
+    p_g1 = sub.add_parser("g1", help="generate the automated G1 acceptance report")
+    p_g1.add_argument("--out", metavar="FILE", help="report target (default benchmarks/g1-acceptance.json)")
+    p_g1.set_defaults(func=_cmd_g1)
 
     p_serve = sub.add_parser("serve", help="run the local core HTTP service")
     p_serve.add_argument("--host", default="127.0.0.1")

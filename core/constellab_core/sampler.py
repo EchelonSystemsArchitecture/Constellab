@@ -69,22 +69,18 @@ def validate_splits(splits: Sequence[float]) -> tuple[float, ...]:
 
 
 def family_for_index(index: int, splits: Sequence[float] | None = None) -> str:
-    """Deterministic family assignment: index blocks map onto the split weights."""
+    """Deterministic family assignment: a fixed 100-slot block keeps families
+    stable across resumed campaigns; split weights are rounded into block
+    boundaries exactly as given (a zero-weight family gets zero slots)."""
     normalized = validate_splits(splits)
-    # A fixed block size keeps families stable across resumed campaigns.
     block = 100
-    share = [round(s * block) for s in normalized]
-    # Guarantee every family gets at least one slot of the block.
-    share = [max(1, s) for s in share]
-    scale = block / sum(share)
-    share = [max(1, int(s * scale)) for s in share]
-    boundaries: list[int] = []
+    edges: list[int] = []
     acc = 0
-    for s in share:
-        acc += s
-        boundaries.append(acc)
+    for weight in normalized:
+        acc += round(weight * block)
+        edges.append(min(acc, block))
     slot = index % block
-    for label, edge in zip(FAMILIES, boundaries):
+    for label, edge in zip(FAMILIES, edges):
         if slot < edge:
             return label
     return FAMILIES[-1]
@@ -180,28 +176,30 @@ def _candidate_values(
     links: Mapping[str, Mapping[str, float]],
     stratum: tuple[int, int] | None,
 ) -> dict[str, dict[str, Any]]:
+    # Pass 1: sample every samplable field from its own spec metadata.
+    # Pass 2: overwrite linked followers from their (now sampled) drivers so
+    # declaration order can never break a correlation.
     values: dict[str, dict[str, Any]] = {}
     for owner in owners:
-        by_short = {spec.short_key: spec for spec in registry.by_owner(owner)}
         bucket: dict[str, Any] = {}
-        for short_key, spec in by_short.items():
+        for spec in registry.by_owner(owner):
             if spec.mutability == "never":
                 continue
-            driver = links.get(f"{owner}.{short_key}")
-            if driver:
-                source_key = driver.get("driver", "")
-                ratio = float(driver.get("ratio", 1.0))
-                if source_key in bucket:
-                    bucket[short_key] = _clamp(
-                        float(bucket[source_key]) * ratio, spec.minimum, spec.maximum
-                    )
-                    if spec.kind == "integer":
-                        bucket[short_key] = int(round(bucket[short_key]))
-                    continue
-                # Driver not sampled yet (or unknown): fall through and let the
-                # constraint check catch the inconsistency.
             value, _ = sample_value(spec, rng, stratum=stratum)
-            bucket[short_key] = value
+            bucket[spec.short_key] = value
+        for spec in registry.by_owner(owner):
+            short_key = spec.short_key
+            driver = links.get(f"{owner}.{short_key}")
+            if not driver:
+                continue
+            source = bucket.get(str(driver.get("driver", "")))
+            if source is None:
+                continue
+            ratio = float(driver.get("ratio", 1.0))
+            linked = _clamp(float(source) * ratio, spec.minimum, spec.maximum)
+            if spec.kind == "integer":
+                linked = int(round(linked))
+            bucket[short_key] = linked
         values[owner] = bucket
     return values
 
@@ -304,10 +302,21 @@ class Sampler:
         self.max_attempts = max(1, int(max_attempts))
         self.rules = builtin_rules(self.registry)
         for key, link in self.links.items():
-            part, _, short = key.rpartition(".")
-            if part not in self.registry or not any(
-                spec.short_key == short for spec in self.registry.by_owner(part)
-            ):
+            owner, _, short = key.rpartition(".")
+            known = key in self.registry or any(
+                spec.short_key == short for spec in self.registry.by_owner(owner)
+            )
+            driver_key = str(link["driver"])
+            # A driver without an owner prefix is a short key of the same owner.
+            driver_owner, driver_short = (
+                driver_key.rpartition(".")
+                if "." in driver_key
+                else (owner, driver_key)
+            )
+            driver_known = driver_key in self.registry or any(
+                spec.short_key == driver_short for spec in self.registry.by_owner(driver_owner)
+            )
+            if not known or not driver_known:
                 raise SamplerError(f"link {key!r} is not a registered parameter key")
 
     @property

@@ -1,0 +1,71 @@
+{
+  "report_version": "g1-acceptance-1",
+  "contract": {
+    "schema_version": 1,
+    "schema_hash": "aa421c726d214a7c4f4cd4f643f85702ea9b0e773176cdc180d70585e84baf45"
+  },
+  "registries": {
+    "parameter_count": 32,
+    "unit_count": 44,
+    "frame_count": 4,
+    "component_count": 8,
+    "dynamics_models": 1,
+    "plugin_count": 7
+  },
+  "stress": {
+    "registry_parameters": 1000,
+    "registry_load_ms": 2.736,
+    "config_1000_load_ms": 248.893,
+    "component_runtime_1000_ms": 284.834
+  },
+  "examples": {
+    "valid_scenarios": [
+      "empty",
+      "visual-orbit-demo",
+      "swarm-48",
+      "swarm-100",
+      "swarm-500",
+      "swarm-1000"
+    ],
+    "malformed_fixtures_rejected": [
+      "not an object",
+      "missing required fields",
+      "unknown operational field",
+      "incompatible major version",
+      "newer minor version",
+      "malformed version string",
+      "timestamp without UTC suffix (unit/convention error)",
+      "seed not an integer",
+      "seed is a boolean",
+      "invalid entity id",
+      "orbit below Earth radius (unit error: metres given as km)",
+      "angle in radians instead of degrees out of range",
+      "hyperbolic eccentricity",
+      "missing orbit field",
+      "duplicate satellite id",
+      "null optional field"
+    ]
+  },
+  "behaviour": {
+    "unknown_operational_field_flagged": true,
+    "transaction_accepts_consistent_edit": true,
+    "transaction_rejects_bounds_violation": true,
+    "sampler_quick_campaign_recorded": true,
+    "constraint_reputation": {
+      "accepted": true,
+      "rejected_paths": [
+        "$.sensor.conical.half_angle_deg"
+      ]
+    }
+  },
+  "limitations": [
+    "dynamics: analytic two-body Kepler propagation only; no J2/drag/third-body effects",
+    "frames: ECI\u2194ECEF\u2194geodetic conversions are closed-form (no nutation/precession beyond the declared model)",
+    "components: resource models are virtual/parametric abstractions, not hardware fidelity models",
+    "parameter registry: schema hash covers semantic spec fields only; display labels may drift freely",
+    "constraint enforcement is declarative operator logic with no arbitrary expression execution",
+    "stress and load timings in this report are measured per run, not guaranteed absolute bounds",
+    "sampling supports registry-declared distributions (constant/uniform/log-uniform/normal); other declared distributions fall back to the constant default",
+    "config load time and stress timings are environment-relative measurements recorded per run, not absolute guarantees"
+  ]
+}

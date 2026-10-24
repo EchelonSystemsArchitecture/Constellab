@@ -3,7 +3,7 @@
 # ConstellaLab — Day 30: Swarm-Testing Layer
 
 Software-only crash-test lab for autonomous satellite swarms — a Three.js Earth viewport built on the versioned Python/TypeScript simulation contract. Satellites orbit Earth from snapshots produced by the local Python core, which can also run headlessly for batch work.
-
+(Echelon)
 ## Quick Start
 
 | Action | Command |

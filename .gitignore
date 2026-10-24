@@ -50,7 +50,7 @@ data/raw/
 docs/
 *.md
 !README.md
-
+.freebuff/
 # regenerable map-data cache for scripts/generate_tactical_earth.py
 scripts/.geo_cache/
 

@@ -203,17 +203,3 @@ npm run dist:win  # Build portable .exe
 npm run icon      # Regenerate icons (needs Pillow)
 ```
 
-## Progress
-
-- **Day 1** ✅ runnable baseline, portable .exe, minimal folder structure
-- **Day 2** ✅ versioned contract, generated TS types, round-trip tests
-- **Day 3** ✅ Three.js Earth with the local tactical texture (canvas fallback), camera controls, stable lifecycle
-- **Day 4** ✅ four configured satellites and their orbit paths, rendered from snapshot elements
-- **Day 5** ✅ analytic two-body propagation, running core clock, live snapshot polling in the viewport
-- **Day 6** ✅ simulation time controls (pause / resume / reset / step / time scale), covered by
-  `core/tests/test_clock.py` (freeze, exact epoch restore, repeated step, scale rate, invalid scale)
-- **Day 7** ✅ satellite selection, camera focus and a typed inspector
-- **Day 8** ✅ runtime scenario loading from validated configuration (catalog + 48-satellite fixture)
-- **Day 9** ✅ schema-driven parameter editor with validated apply/restart
-- **Day 10** ✅ canonical API: request ids, state revisions, stale-snapshot guard, headless run
-- **Day 11** — next: renderer scale beyond four satellites (instanced markers, bounded paths, 100/500/1,000-satellite benchmarks)
